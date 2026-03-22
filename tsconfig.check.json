@@ -1,0 +1,12 @@
+{
+  "$comment": "Root-level typecheck config — excludes DOM packages (renderer, browser) which have their own tsconfigs with 'lib: DOM'",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "exclude": [
+    "node_modules",
+    "app/renderer/**/*",
+    "packages/browser/**/*"
+  ]
+}

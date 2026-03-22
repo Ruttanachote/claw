@@ -1,0 +1,87 @@
+version: "3.9"
+
+# ──────────────────────────────────────────────────────────────
+# Claw — headless worker stack
+#
+# Services:
+#   worker   — gateway + agent + memory + cron (no Electron)
+#   chrome   — standalone Chrome via chrome-headless-shell (optional)
+#
+# Usage:
+#   cp claw.config.toml.example claw.config.toml   # fill in API keys
+#   docker compose up -d
+#
+# The full desktop Electron app still runs natively on your machine.
+# Use this compose file when you want to deploy the AI backend
+# to a server or run it in CI without a display.
+# ──────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Core worker ─────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: claw-worker
+    restart: unless-stopped
+
+    environment:
+      NODE_ENV: production
+      CLAW_DB_PATH: /app/data/claw.db
+      CLAW_LOG_DIR: /app/data/logs
+      # Override Puppeteer to use the companion chrome service
+      PUPPETEER_BROWSER_URL: "http://chrome:9222"
+
+    volumes:
+      # Mount config (contains secrets — NOT baked into image)
+      - ./claw.config.toml:/app/claw.config.toml:ro
+      # Persistent SQLite DB + logs
+      - claw-data:/app/data
+      # Live-reload built-in skills without rebuild
+      - ./skills:/app/skills:ro
+
+    ports:
+      # Exposes gateway HTTP bridge (added in step 6 for headless mode)
+      - "3000:3000"
+
+    depends_on:
+      chrome:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ── Headless Chrome (Puppeteer target) ──────────────────────
+  chrome:
+    image: zenika/alpine-chrome:latest
+    container_name: claw-chrome
+    restart: unless-stopped
+
+    command: >
+      --no-sandbox
+      --disable-setuid-sandbox
+      --disable-dev-shm-usage
+      --disable-gpu
+      --remote-debugging-port=9222
+      --remote-debugging-address=0.0.0.0
+
+    ports:
+      - "9222:9222"
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9222/json/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+# ── Volumes ─────────────────────────────────────────────────
+volumes:
+  claw-data:
+    name: claw-data

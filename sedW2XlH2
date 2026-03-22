@@ -1,0 +1,30 @@
+[llm]
+provider    = "openrouter"
+base_url    = "https://openrouter.ai/api/v1"
+api_key     = "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"
+model       = "anthropic/claude-sonnet-4-6"
+max_tokens  = 4096
+
+[agent]
+orchestrator_model  = "anthropic/claude-sonnet-4-6"
+sub_agent_model     = "anthropic/claude-haiku-4-5-20251001"
+max_iterations      = 20
+
+[browser]
+headless         = true
+executable_path  = ""   # leave empty to auto-detect
+
+[memory]
+db_path               = "./claw.db"
+max_context_messages  = 50
+
+[skills]
+paths = [
+  "./skills/built-in",
+  "./skills/user",
+  "./skills/community"
+]
+
+[logging]
+dir   = "~/.claw/logs"
+level = "info"   # "debug" | "info" | "warn" | "error"

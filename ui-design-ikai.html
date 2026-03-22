@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IKAI — UI Design</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    /* ── Core Palette: Warm Egg / IKAI ─────────────────────── */
+    --bg-base:      #0c0a07;
+    --bg-sidebar:   #131008;
+    --bg-panel:     #18140b;
+    --bg-card:      #1e190e;
+    --bg-hover:     #252014;
+    --bg-active:    #2d2718;
+    --border:       #2e2718;
+    --border-light: #3d3420;
+
+    /* Orange accent — ไข่แดง */
+    --accent:       #f97316;
+    --accent-dim:   #c25a0f;
+    --accent-glow:  rgba(249,115,22,0.18);
+
+    /* Yellow-gold secondary — ไข่เหลือง */
+    --gold:         #eab308;
+    --gold-dim:     rgba(234,179,8,0.15);
+
+    /* Status colors (kept readable) */
+    --green:        #4ade80;
+    --green-dim:    rgba(74,222,128,0.12);
+    --amber:        #fb923c;
+    --amber-dim:    rgba(251,146,60,0.15);
+    --red:          #f87171;
+    --red-dim:      rgba(248,113,113,0.12);
+    --blue:         #60a5fa;
+    --blue-dim:     rgba(96,165,250,0.12);
+
+    /* Text — warm off-white */
+    --text-primary:   #fdf0dc;
+    --text-secondary: #b8a88a;
+    --text-muted:     #6b5f45;
+
+    --sidebar-w:    224px;
+    --header-h:     52px;
+    --radius:       10px;
+    --radius-sm:    6px;
+
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+  }
+
+  html, body { height: 100%; font-family: var(--font); background: var(--bg-base); color: var(--text-primary); overflow: hidden; }
+
+  /* ─── Layout ───────────────────────────────────────────── */
+  .app { display: flex; height: 100vh; }
+
+  /* ─── Sidebar ──────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 14px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, #f97316 0%, #fbbf24 100%);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 18px rgba(249,115,22,0.35);
+    flex-shrink: 0;
+  }
+  .logo-name { font-size: 17px; font-weight: 800; letter-spacing: 1.5px; color: var(--text-primary); }
+  .logo-sub  { font-size: 10px; color: var(--text-muted); letter-spacing: 0.3px; }
+  .logo-badge {
+    font-size: 9px; font-weight: 700; color: var(--accent);
+    background: var(--accent-glow);
+    border: 1px solid rgba(249,115,22,0.3);
+    border-radius: 4px;
+    padding: 1px 6px;
+    letter-spacing: 0.5px;
+    margin-left: auto;
+  }
+
+  .sidebar-section { padding: 8px 8px 4px; }
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 6px 8px 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.12s;
+    position: relative;
+    user-select: none;
+  }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(249,115,22,0.12) 0%, transparent 100%);
+    color: var(--text-primary);
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 5px; bottom: 5px;
+    width: 3px;
+    background: linear-gradient(180deg, var(--accent), var(--gold));
+    border-radius: 0 3px 3px 0;
+  }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 700;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 1px 6px;
+    border: 1px solid rgba(249,115,22,0.2);
+  }
+  .nav-badge.green { background: var(--green-dim); color: var(--green); border-color: rgba(74,222,128,0.2); }
+  .nav-badge.gold  { background: var(--gold-dim);  color: var(--gold);  border-color: rgba(234,179,8,0.2); }
+
+  .sidebar-sub { padding-left: 18px; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 10px 8px;
+    border-top: 1px solid var(--border);
+  }
+  .status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    margin-right: 6px;
+  }
+
+  /* ─── Main ──────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg-base); }
+
+  .topbar {
+    height: var(--header-h);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+  }
+  .topbar-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.12s;
+    white-space: nowrap;
+    font-family: var(--font);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #fb923c 100%);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(249,115,22,0.3);
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .btn-gold   { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(234,179,8,0.2); }
+
+  /* ─── Content ───────────────────────────────────────────── */
+  .content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .panel { display: none; height: 100%; }
+  .panel.active { display: flex; flex-direction: column; }
+
+  /* ─── Dashboard ─────────────────────────────────────────── */
+  .dash-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; padding: 20px; }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .stat-card.orange::after { background: linear-gradient(90deg, var(--accent), var(--gold)); }
+  .stat-card.green::after  { background: var(--green); }
+  .stat-card.gold::after   { background: var(--gold); }
+  .stat-card.blue::after   { background: var(--blue); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    bottom: -20px; right: -20px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(249,115,22,0.06), transparent 70%);
+  }
+
+  .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+  .stat-sub   { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+  .stat-icon  { position: absolute; top: 14px; right: 14px; font-size: 20px; opacity: 0.3; }
+
+  .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 20px 20px; }
+  .dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .dash-card-header {
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+  }
+  .dash-card-body { padding: 12px; }
+
+  .activity-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .activity-msg { color: var(--text-secondary); line-height: 1.5; flex: 1; }
+  .activity-msg strong { color: var(--text-primary); }
+  .activity-time { color: var(--text-muted); white-space: nowrap; font-size: 10px; flex-shrink: 0; }
+
+  .mini-bar { display: flex; flex-direction: column; gap: 8px; }
+  .mini-bar-row { display: flex; align-items: center; gap: 10px; font-size: 12px; }
+  .mini-bar-label { color: var(--text-secondary); width: 100px; flex-shrink: 0; }
+  .mini-bar-track { flex:1; height: 5px; background: var(--bg-hover); border-radius: 3px; overflow: hidden; }
+  .mini-bar-fill  { height: 100%; border-radius: 3px; }
+  .mini-bar-val   { color: var(--text-muted); width: 32px; text-align: right; font-size: 11px; flex-shrink: 0; }
+
+  /* ─── Sessions ──────────────────────────────────────────── */
+  .sessions-layout { display: flex; height: 100%; }
+  .sessions-list { width: 300px; border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
+  .sessions-search { padding: 12px; border-bottom: 1px solid var(--border); }
+  .search-input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 7px 10px;
+    font-size: 12px;
+    color: var(--text-primary);
+    outline: none;
+    font-family: var(--font);
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .session-item { padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .session-item:hover { background: var(--bg-hover); }
+  .session-item.active { background: linear-gradient(90deg, rgba(249,115,22,0.1), transparent); border-left: 2px solid var(--accent); }
+  .session-id      { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 4px; }
+  .session-preview { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+  .session-meta    { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); }
+
+  .chat-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .msg { display: flex; gap: 10px; max-width: 760px; }
+  .msg.user { flex-direction: row-reverse; align-self: flex-end; }
+  .msg-avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px;
+  }
+  .msg.assistant .msg-avatar {
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    box-shadow: 0 0 10px rgba(249,115,22,0.3);
+  }
+  .msg.user .msg-avatar { background: var(--bg-card); border: 1px solid var(--border); }
+  .msg-bubble { padding: 10px 14px; border-radius: var(--radius); font-size: 13px; line-height: 1.6; max-width: 620px; }
+  .msg.assistant .msg-bubble { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary); }
+  .msg.user .msg-bubble { background: linear-gradient(135deg, var(--accent-dim), #9a4509); color: #fff; }
+  .msg-tool {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-left: 3px solid var(--gold);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tool-chip {
+    background: var(--gold-dim);
+    color: var(--gold);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .chat-input-area { padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+  .chat-input-row {
+    display: flex; gap: 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px 4px 4px 14px;
+    align-items: flex-end;
+    transition: border-color 0.15s;
+  }
+  .chat-input-row:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(249,115,22,0.08); }
+  .chat-textarea {
+    flex: 1; background: transparent; border: none; outline: none;
+    font-size: 13px; color: var(--text-primary);
+    font-family: var(--font); resize: none;
+    min-height: 38px; max-height: 120px;
+    padding: 8px 0; line-height: 1.5;
+  }
+  .chat-textarea::placeholder { color: var(--text-muted); }
+  .chat-send {
+    background: linear-gradient(135deg, var(--accent), #fb923c);
+    border: none; color: #fff;
+    width: 34px; height: 34px; border-radius: 7px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; transition: filter 0.12s;
+    margin-bottom: 2px;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.3);
+  }
+  .chat-send:hover { filter: brightness(1.15); }
+
+  /* ─── Memory ────────────────────────────────────────────── */
+  .memory-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; padding: 20px; align-content: start; }
+  .memory-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .memory-card-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+  .memory-key { font-size: 11px; font-family: var(--font-mono); color: var(--accent); margin-bottom: 2px; }
+  .memory-val { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+  .memory-ts  { font-size: 10px; color: var(--text-muted); }
+
+  /* ─── Skills ────────────────────────────────────────────── */
+  .skills-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; padding: 20px; align-content: start; }
+  .skill-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .skill-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 18px rgba(249,115,22,0.12);
+    transform: translateY(-1px);
+  }
+  .skill-icon { font-size: 26px; margin-bottom: 10px; }
+  .skill-name { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .skill-desc { font-size: 11px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 12px; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .skill-tag { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 4px; background: var(--bg-hover); color: var(--text-muted); border: 1px solid var(--border); }
+  .skill-status { display: flex; align-items: center; gap: 5px; font-size: 10px; margin-top: 10px; }
+
+  /* ─── Cron ──────────────────────────────────────────────── */
+  .cron-wrap { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .cron-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .cron-row {
+    display: flex; align-items: center;
+    padding: 14px 16px; gap: 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .cron-row:last-child { border-bottom: none; }
+  .cron-row:hover { background: var(--bg-hover); }
+  .cron-name { font-size: 13px; font-weight: 600; min-width: 150px; }
+  .cron-expr {
+    font-size: 11px; font-family: var(--font-mono);
+    color: var(--gold); background: var(--gold-dim);
+    padding: 3px 8px; border-radius: 4px;
+    border: 1px solid rgba(234,179,8,0.2);
+  }
+  .cron-desc { font-size: 11px; color: var(--text-secondary); flex: 1; }
+  .cron-last { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+  .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--bg-hover);
+    border-radius: 10px; cursor: pointer;
+    transition: background 0.2s;
+    border: 1px solid var(--border);
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
+  .toggle-track::after {
+    content: ''; position: absolute;
+    left: 3px; top: 2px;
+    width: 14px; height: 14px;
+    background: #fff; border-radius: 50%; transition: left 0.2s;
+  }
+  .toggle input:checked + .toggle-track::after { left: 17px; }
+
+  /* ─── Logs ──────────────────────────────────────────────── */
+  .logs-wrap { display: flex; flex-direction: column; height: 100%; }
+  .logs-toolbar {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    display: flex; gap: 8px; align-items: center;
+    background: var(--bg-panel); flex-shrink: 0;
+  }
+  .log-filter {
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 4px;
+    cursor: pointer; border: 1px solid transparent;
+    background: transparent; color: var(--text-muted);
+    transition: all 0.1s; font-family: var(--font);
+  }
+  .log-filter.active, .log-filter:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border); }
+  .log-filter.warn.active  { background: var(--amber-dim); color: var(--amber); border-color: rgba(251,146,60,0.3); }
+  .log-filter.error.active { background: var(--red-dim); color: var(--red); border-color: rgba(248,113,113,0.3); }
+
+  .logs-body {
+    flex: 1; overflow-y: auto; padding: 8px;
+    font-family: var(--font-mono); font-size: 11.5px; line-height: 1.7;
+    background: var(--bg-base);
+  }
+  .log-line { display: flex; gap: 10px; padding: 2px 8px; border-radius: 3px; }
+  .log-line:hover { background: var(--bg-card); }
+  .log-ts  { color: var(--text-muted); flex-shrink: 0; }
+  .log-lvl { flex-shrink: 0; width: 40px; font-weight: 700; }
+  .log-lvl.INFO  { color: var(--blue); }
+  .log-lvl.WARN  { color: var(--amber); }
+  .log-lvl.ERROR { color: var(--red); }
+  .log-lvl.DEBUG { color: var(--text-muted); }
+  .log-src { color: var(--accent); flex-shrink: 0; }
+  .log-msg { color: var(--text-secondary); }
+
+  /* ─── Config ────────────────────────────────────────────── */
+  .config-wrap { padding: 20px; display: grid; grid-template-columns: 200px 1fr; gap: 16px; height: 100%; }
+  .config-nav { display: flex; flex-direction: column; gap: 4px; }
+  .config-nav-item { padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; cursor: pointer; color: var(--text-secondary); transition: all 0.1s; }
+  .config-nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .config-nav-item.active { background: linear-gradient(90deg, rgba(249,115,22,0.12), transparent); color: var(--text-primary); border-left: 2px solid var(--accent); }
+  .config-body { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-right: 4px; }
+  .config-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .config-section-title { padding: 12px 16px; font-size: 11px; font-weight: 700; border-bottom: 1px solid var(--border); background: var(--bg-panel); color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .config-field { display: flex; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); gap: 12px; }
+  .config-field:last-child { border-bottom: none; }
+  .config-field-label { font-size: 12px; font-weight: 600; min-width: 150px; color: var(--text-primary); }
+  .config-field-desc  { font-size: 11px; color: var(--text-muted); flex: 1; }
+  .config-input {
+    background: var(--bg-base); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 6px 10px;
+    font-size: 12px; color: var(--text-primary);
+    font-family: var(--font-mono); outline: none; width: 230px;
+  }
+  .config-input:focus { border-color: var(--accent); }
+  .config-input.secret { -webkit-text-security: disc; }
+
+  /* ─── Nodes canvas ──────────────────────────────────────── */
+  .nodes-canvas {
+    flex: 1; position: relative; overflow: hidden; cursor: grab;
+    background:
+      radial-gradient(ellipse at 30% 40%, rgba(249,115,22,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 70%, rgba(234,179,8,0.03) 0%, transparent 50%),
+      linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 40px 40px;
+    background-color: var(--bg-base);
+  }
+  .node {
+    position: absolute;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-width: 165px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    user-select: none;
+  }
+  .node.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(249,115,22,0.15), 0 4px 20px rgba(0,0,0,0.4); }
+  .node-header {
+    padding: 9px 12px; border-bottom: 1px solid var(--border);
+    font-size: 10px; font-weight: 800;
+    display: flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-muted);
+    background: var(--bg-panel);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .node-header-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .node-body { padding: 10px 12px; font-size: 12px; color: var(--text-secondary); }
+  .node-port {
+    position: absolute; width: 12px; height: 12px;
+    background: var(--bg-base); border: 2px solid var(--border-light);
+    border-radius: 50%; cursor: crosshair;
+    transition: border-color 0.1s;
+  }
+  .node-port:hover { border-color: var(--accent); }
+  .node-port.out { right: -7px; top: 50%; transform: translateY(-50%); }
+  .node-port.in  { left:  -7px; top: 50%; transform: translateY(-50%); }
+  .nodes-svg { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+  .connector { stroke: var(--accent); stroke-width: 2; fill: none; opacity: 0.5; stroke-dasharray: 5 5; animation: dashFlow 1.2s linear infinite; }
+  .connector.gold { stroke: var(--gold); }
+  @keyframes dashFlow { to { stroke-dashoffset: -10; } }
+
+  /* ─── Telegram ──────────────────────────────────────────── */
+  .telegram-wrap { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+  .tg-status-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; align-items: center; gap: 16px; }
+  .tg-icon { font-size: 36px; }
+  .tg-info h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .tg-info p { font-size: 12px; color: var(--text-secondary); }
+  .tg-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .tg-stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+  .tg-stat-val { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .tg-stat-lbl { font-size: 11px; color: var(--text-muted); }
+  .tg-messages { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tg-msg-row { display: flex; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+  .tg-msg-row:last-child { border-bottom: none; }
+  .tg-user { font-weight: 600; color: var(--accent); min-width: 100px; }
+  .tg-text { color: var(--text-secondary); flex: 1; }
+  .tg-time { color: var(--text-muted); font-size: 10px; }
+
+  /* ─── Pills ─────────────────────────────────────────────── */
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px;
+  }
+  .pill.green  { background: var(--green-dim);  color: var(--green); }
+  .pill.amber  { background: var(--amber-dim);  color: var(--amber); }
+  .pill.red    { background: var(--red-dim);    color: var(--red); }
+  .pill.orange { background: var(--accent-glow); color: var(--accent); }
+  .pill.gold   { background: var(--gold-dim);   color: var(--gold); }
+  .pill.blue   { background: var(--blue-dim);   color: var(--blue); }
+
+  /* ─── Scrollbar ─────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  .cursor::after { content: '▋'; animation: blink 0.9s step-end infinite; color: var(--accent); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Agent Status page specifics */
+  .agent-glow-ring {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #fbbf24);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    box-shadow: 0 0 0 8px rgba(249,115,22,0.08), 0 0 0 16px rgba(249,115,22,0.04), 0 0 40px rgba(249,115,22,0.25);
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 8px rgba(249,115,22,0.08), 0 0 0 16px rgba(249,115,22,0.04), 0 0 40px rgba(249,115,22,0.2); }
+    50%      { box-shadow: 0 0 0 8px rgba(249,115,22,0.14), 0 0 0 22px rgba(249,115,22,0.06), 0 0 60px rgba(249,115,22,0.3); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ═══════ SIDEBAR ═══════════════════════════════════════ -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🥚</div>
+      <div>
+        <div class="logo-name">IKAI</div>
+        <div class="logo-sub">Personal AI Agent</div>
+      </div>
+      <div class="logo-badge">v0.1</div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <div class="nav-item active" data-panel="dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-panel="sessions">
+        <span class="nav-icon">💬</span> Sessions
+        <span class="nav-badge green">3</span>
+      </div>
+      <div class="nav-item" data-panel="memory">
+        <span class="nav-icon">🧠</span> Memory
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Agents</div>
+      <div class="nav-item" data-panel="agent-main">
+        <span class="nav-icon">🤖</span> Main Agent
+        <span class="nav-badge green">ON</span>
+      </div>
+      <div class="sidebar-sub">
+        <div class="nav-item" data-panel="sub-agents" style="font-size:12px">
+          <span class="nav-icon" style="font-size:12px">🐣</span> Sub-Agents
+        </div>
+        <div class="nav-item" data-panel="skills" style="font-size:12px">
+          <span class="nav-icon" style="font-size:12px">🧩</span> Skills
+          <span class="nav-badge">4</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Channels</div>
+      <div class="nav-item" data-panel="telegram">
+        <span class="nav-icon">📱</span> Telegram
+        <span class="nav-badge green">●</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">System</div>
+      <div class="nav-item" data-panel="cron">
+        <span class="nav-icon">⏰</span> Cron Jobs
+        <span class="nav-badge gold">2</span>
+      </div>
+      <div class="nav-item" data-panel="nodes">
+        <span class="nav-icon">📡</span> Nodes
+      </div>
+      <div class="nav-item" data-panel="logs">
+        <span class="nav-icon">📝</span> Logs
+      </div>
+      <div class="nav-item" data-panel="config">
+        <span class="nav-icon">⚙️</span> Config
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="nav-item" style="cursor:default;padding:6px 8px">
+        <span class="status-dot"></span>
+        <span style="font-size:11px;color:var(--text-secondary)">Agent running</span>
+        <span class="pill orange" style="margin-left:auto;font-size:9px">LIVE</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════ MAIN ═════════════════════════════════════════ -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">Dashboard</span>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" style="font-size:11px">🔄 Refresh</button>
+        <button class="btn btn-primary" style="font-size:11px" onclick="switchPanel('sessions')">＋ New Session</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══ DASHBOARD ════════════════════════════════════════ -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="dash-grid">
+          <div class="stat-card orange">
+            <div class="stat-icon">💬</div>
+            <div class="stat-label">Total Sessions</div>
+            <div class="stat-value">247</div>
+            <div class="stat-sub" style="color:var(--accent)">↑ 12 today</div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-label">Tasks Done</div>
+            <div class="stat-value">1,832</div>
+            <div class="stat-sub">98.4% success rate</div>
+          </div>
+          <div class="stat-card gold">
+            <div class="stat-icon">🛠️</div>
+            <div class="stat-label">Tool Calls</div>
+            <div class="stat-value">6,491</div>
+            <div class="stat-sub">avg 3.5 / session</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-label">Avg Response</div>
+            <div class="stat-value">2.4s</div>
+            <div class="stat-sub">↓ 0.3s vs last week</div>
+          </div>
+        </div>
+
+        <div class="dash-row">
+          <div class="dash-card">
+            <div class="dash-card-header">🔥 Recent Activity</div>
+            <div class="dash-card-body">
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--green)"></div>
+                <div class="activity-msg"><strong>Session #247</strong> completed — "Search and summarize AI news"</div>
+                <div class="activity-time">2m ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--gold)"></div>
+                <div class="activity-msg"><strong>Cron</strong> "daily-report" fired</div>
+                <div class="activity-time">14m ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--blue)"></div>
+                <div class="activity-msg"><strong>Telegram</strong> message from @nuiz</div>
+                <div class="activity-time">32m ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--accent)"></div>
+                <div class="activity-msg"><strong>Skill</strong> web-search used 8 times</div>
+                <div class="activity-time">1h ago</div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-dot" style="background:var(--green)"></div>
+                <div class="activity-msg"><strong>Session #246</strong> completed — "Draft email to team"</div>
+                <div class="activity-time">1h ago</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-card">
+            <div class="dash-card-header">🧩 Top Skills Today</div>
+            <div class="dash-card-body">
+              <div class="mini-bar" style="margin-top:6px">
+                <div class="mini-bar-row">
+                  <span class="mini-bar-label">web-search</span>
+                  <div class="mini-bar-track"><div class="mini-bar-fill" style="width:80%;background:linear-gradient(90deg,var(--accent),var(--gold))"></div></div>
+                  <span class="mini-bar-val">128</span>
+                </div>
+                <div class="mini-bar-row">
+                  <span class="mini-bar-label">screenshot</span>
+                  <div class="mini-bar-track"><div class="mini-bar-fill" style="width:55%;background:var(--blue)"></div></div>
+                  <span class="mini-bar-val">89</span>
+                </div>
+                <div class="mini-bar-row">
+                  <span class="mini-bar-label">memory-read</span>
+                  <div class="mini-bar-track"><div class="mini-bar-fill" style="width:40%;background:var(--green)"></div></div>
+                  <span class="mini-bar-val">64</span>
+                </div>
+                <div class="mini-bar-row">
+                  <span class="mini-bar-label">write-file</span>
+                  <div class="mini-bar-track"><div class="mini-bar-fill" style="width:22%;background:var(--gold)"></div></div>
+                  <span class="mini-bar-val">35</span>
+                </div>
+                <div class="mini-bar-row">
+                  <span class="mini-bar-label">click</span>
+                  <div class="mini-bar-track"><div class="mini-bar-fill" style="width:14%;background:var(--red)"></div></div>
+                  <span class="mini-bar-val">22</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SESSIONS ══════════════════════════════════════════ -->
+      <div class="panel" id="panel-sessions" style="display:none">
+        <div class="sessions-layout">
+          <div class="sessions-list">
+            <div class="sessions-search">
+              <input class="search-input" placeholder="🔍  Search sessions…"/>
+            </div>
+            <div style="overflow-y:auto;flex:1">
+              <div class="session-item active">
+                <div class="session-id">#247 · 2m ago</div>
+                <div class="session-preview">Search and summarize the latest AI news</div>
+                <div class="session-meta"><span>5 turns</span><span class="pill green">done</span></div>
+              </div>
+              <div class="session-item">
+                <div class="session-id">#246 · 1h ago</div>
+                <div class="session-preview">Draft a team email about Q4 roadmap</div>
+                <div class="session-meta"><span>3 turns</span><span class="pill green">done</span></div>
+              </div>
+              <div class="session-item">
+                <div class="session-id">#245 · 3h ago</div>
+                <div class="session-preview">Take screenshot of example.com and…</div>
+                <div class="session-meta"><span>2 turns</span><span class="pill amber">partial</span></div>
+              </div>
+              <div class="session-item">
+                <div class="session-id">#244 · 6h ago</div>
+                <div class="session-preview">Summarize contents of ~/Documents/r…</div>
+                <div class="session-meta"><span>7 turns</span><span class="pill green">done</span></div>
+              </div>
+              <div class="session-item">
+                <div class="session-id">#243 · 1d ago</div>
+                <div class="session-preview">Help me write a regex for email validation</div>
+                <div class="session-meta"><span>4 turns</span><span class="pill green">done</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="chat-area">
+            <div class="chat-messages">
+              <div class="msg user">
+                <div class="msg-avatar">🧑</div>
+                <div class="msg-bubble">Search and summarize the latest AI news from today</div>
+              </div>
+              <div class="msg assistant">
+                <div class="msg-avatar">🥚</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div class="msg-tool"><span class="tool-chip">TOOL</span>web-search · "AI news today 2025"</div>
+                  <div class="msg-tool"><span class="tool-chip">TOOL</span>web-search · "latest LLM releases 2025"</div>
+                  <div class="msg-bubble">Here's a summary of today's top AI news:
+
+**1. OpenAI releases GPT-5** — Improved reasoning and multimodal capabilities, available via API today.
+
+**2. Google DeepMind Gemini Ultra 2** — SOTA results on coding benchmarks, trained on 10× more data.
+
+**3. Meta open-sources Llama 4** — 70B + 400B under permissive license with strong multilingual support.
+
+---
+*Sources: TechCrunch, The Verge, Ars Technica*</div>
+                </div>
+              </div>
+              <div class="msg user">
+                <div class="msg-avatar">🧑</div>
+                <div class="msg-bubble">Which one is most impressive?</div>
+              </div>
+              <div class="msg assistant">
+                <div class="msg-avatar">🥚</div>
+                <div class="msg-bubble">Based on benchmarks, **GPT-5** stands out most — particularly for reasoning improvements on math and coding. But **Llama 4** is arguably most impactful from an ecosystem standpoint since it's fully open-source.<span class="cursor"></span></div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <div class="chat-input-row">
+                <textarea class="chat-textarea" placeholder="Message IKAI…" rows="1"></textarea>
+                <button class="chat-send">↑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MEMORY ════════════════════════════════════════════ -->
+      <div class="panel" id="panel-memory" style="display:none">
+        <div class="memory-grid">
+          <div class="memory-card">
+            <div class="memory-card-title">👤 User Profile</div>
+            <div class="memory-key">user.name</div><div class="memory-val">nuiz</div>
+            <div class="memory-key">user.language</div><div class="memory-val">Thai / English</div>
+            <div class="memory-key">user.timezone</div><div class="memory-val">Asia/Bangkok (UTC+7)</div>
+            <div class="memory-ts">Updated 2h ago</div>
+          </div>
+          <div class="memory-card">
+            <div class="memory-card-title">🎯 Preferences</div>
+            <div class="memory-key">pref.response_style</div><div class="memory-val">concise, markdown</div>
+            <div class="memory-key">pref.code_lang</div><div class="memory-val">TypeScript, Python</div>
+            <div class="memory-key">pref.model</div><div class="memory-val">claude-sonnet-4-5</div>
+            <div class="memory-ts">Updated 1d ago</div>
+          </div>
+          <div class="memory-card">
+            <div class="memory-card-title">📌 Active Project</div>
+            <div class="memory-key">project.name</div><div class="memory-val">IKAI — Personal AI Agent</div>
+            <div class="memory-key">project.stack</div><div class="memory-val">Electron + Node.js + TS</div>
+            <div class="memory-key">project.status</div><div class="memory-val">In development</div>
+            <div class="memory-ts">Updated 5m ago</div>
+          </div>
+          <div class="memory-card">
+            <div class="memory-card-title">🔗 Saved URLs</div>
+            <div class="memory-key">url.docs</div><div class="memory-val">https://docs.anthropic.com</div>
+            <div class="memory-key">url.repo</div><div class="memory-val">https://github.com/nuiz/ikai</div>
+            <div class="memory-key">url.npm</div><div class="memory-val">https://npmjs.com</div>
+            <div class="memory-ts">Updated 3d ago</div>
+          </div>
+          <div class="memory-card" style="display:flex;flex-direction:column;justify-content:space-between">
+            <div class="memory-card-title">📊 Stats</div>
+            <div style="display:flex;gap:10px">
+              <div style="flex:1;text-align:center">
+                <div style="font-size:22px;font-weight:800;color:var(--accent)">247</div>
+                <div style="font-size:10px;color:var(--text-muted)">sessions</div>
+              </div>
+              <div style="flex:1;text-align:center">
+                <div style="font-size:22px;font-weight:800;color:var(--gold)">1.8K</div>
+                <div style="font-size:10px;color:var(--text-muted)">messages</div>
+              </div>
+              <div style="flex:1;text-align:center">
+                <div style="font-size:22px;font-weight:800;color:var(--green)">42</div>
+                <div style="font-size:10px;color:var(--text-muted)">memories</div>
+              </div>
+            </div>
+          </div>
+          <div class="memory-card" style="border:1px dashed var(--border-light);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;min-height:120px" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border-light)'">
+            <div style="text-align:center;color:var(--text-muted)">
+              <div style="font-size:24px;margin-bottom:6px">＋</div>
+              <div style="font-size:12px">Add memory</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ MAIN AGENT ════════════════════════════════════════ -->
+      <div class="panel" id="panel-agent-main" style="display:none">
+        <div style="padding:40px;display:flex;flex-direction:column;align-items:center;gap:28px">
+          <div class="agent-glow-ring">🥚</div>
+          <div style="text-align:center">
+            <h2 style="font-size:20px;font-weight:800;margin-bottom:6px">IKAI Main Agent</h2>
+            <p style="font-size:13px;color:var(--text-secondary)">claude-sonnet-4-5 · Uptime 4h 23m · Streaming enabled</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%;max-width:640px">
+            <div class="stat-card orange" style="text-align:center">
+              <div class="stat-label">Status</div>
+              <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px">
+                <span class="status-dot"></span>
+                <span style="font-size:15px;font-weight:700">Running</span>
+              </div>
+            </div>
+            <div class="stat-card gold">
+              <div class="stat-label">Iterations today</div>
+              <div class="stat-value">1,247</div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-label">Success rate</div>
+              <div class="stat-value">98.4%</div>
+            </div>
+          </div>
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;width:100%;max-width:640px">
+            <div class="dash-card-header">⚙️ Configuration</div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                <span style="color:var(--text-secondary)">Model</span>
+                <code style="color:var(--accent);background:var(--accent-glow);padding:3px 8px;border-radius:4px;font-size:11px">claude-sonnet-4-5</code>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                <span style="color:var(--text-secondary)">Max Iterations</span>
+                <code style="color:var(--text-primary);background:var(--bg-hover);padding:3px 8px;border-radius:4px;font-size:11px">10</code>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                <span style="color:var(--text-secondary)">Streaming</span>
+                <span class="pill green">● Enabled</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+                <span style="color:var(--text-secondary)">Abort on request</span>
+                <span class="pill green">● Supported</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-danger">⏹ Stop Agent</button>
+            <button class="btn btn-ghost">🔄 Restart</button>
+            <button class="btn btn-primary">⚙️ Configure</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SKILLS ════════════════════════════════════════════ -->
+      <div class="panel" id="panel-skills" style="display:none">
+        <div class="skills-grid">
+          <div class="skill-card">
+            <div class="skill-icon">🌐</div>
+            <div class="skill-name">web-search</div>
+            <div class="skill-desc">Search the web using DuckDuckGo and return structured results with titles, URLs, and snippets.</div>
+            <div class="skill-tags"><span class="skill-tag">browser</span><span class="skill-tag">search</span><span class="skill-tag">query</span></div>
+            <div class="skill-status"><span class="pill green">● Active</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">128× today</span></div>
+          </div>
+          <div class="skill-card">
+            <div class="skill-icon">📸</div>
+            <div class="skill-name">browser-screenshot</div>
+            <div class="skill-desc">Take a full-page screenshot of any URL and return it as a base64 PNG image.</div>
+            <div class="skill-tags"><span class="skill-tag">browser</span><span class="skill-tag">screenshot</span><span class="skill-tag">png</span></div>
+            <div class="skill-status"><span class="pill green">● Active</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">89× today</span></div>
+          </div>
+          <div class="skill-card">
+            <div class="skill-icon">🧠</div>
+            <div class="skill-name">memory-read</div>
+            <div class="skill-desc">Read a value from long-term key-value memory store for persistence across sessions.</div>
+            <div class="skill-tags"><span class="skill-tag">memory</span><span class="skill-tag">storage</span><span class="skill-tag">key-value</span></div>
+            <div class="skill-status"><span class="pill green">● Active</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">64× today</span></div>
+          </div>
+          <div class="skill-card">
+            <div class="skill-icon">✍️</div>
+            <div class="skill-name">memory-write</div>
+            <div class="skill-desc">Write a value to long-term key-value memory store for future retrieval.</div>
+            <div class="skill-tags"><span class="skill-tag">memory</span><span class="skill-tag">persist</span></div>
+            <div class="skill-status"><span class="pill green">● Active</span><span style="font-size:10px;color:var(--text-muted);margin-left:auto">35× today</span></div>
+          </div>
+          <div class="skill-card" style="border:1px dashed var(--border-light);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border-light)'">
+            <div style="font-size:28px;margin-bottom:8px">＋</div>
+            <div style="font-size:12px;color:var(--text-muted)">Add Skill</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TELEGRAM ══════════════════════════════════════════ -->
+      <div class="panel" id="panel-telegram" style="display:none">
+        <div class="telegram-wrap">
+          <div class="tg-status-card">
+            <div class="tg-icon">📱</div>
+            <div class="tg-info">
+              <h3>Telegram Bot — @ikai_agent_bot</h3>
+              <p>Connected · Polling every 2s · Chat ID: -100123456789</p>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+              <span class="pill green">● Online</span>
+              <button class="btn btn-ghost">Settings</button>
+            </div>
+          </div>
+          <div class="tg-stats">
+            <div class="tg-stat"><div class="tg-stat-val" style="color:var(--blue)">1,204</div><div class="tg-stat-lbl">Messages received</div></div>
+            <div class="tg-stat"><div class="tg-stat-val" style="color:var(--green)">1,198</div><div class="tg-stat-lbl">Replies sent</div></div>
+            <div class="tg-stat"><div class="tg-stat-val" style="color:var(--accent)">3</div><div class="tg-stat-lbl">Active users</div></div>
+          </div>
+          <div class="tg-messages">
+            <div class="dash-card-header">📨 Recent Messages</div>
+            <div class="tg-msg-row"><div class="tg-user">@nuiz</div><div class="tg-text">ช่วยสรุป AI news วันนี้หน่อย</div><span class="pill green">✓ replied</span><div class="tg-time">2m ago</div></div>
+            <div class="tg-msg-row"><div class="tg-user">@nuiz</div><div class="tg-text">screenshot https://example.com</div><span class="pill green">✓ replied</span><div class="tg-time">1h ago</div></div>
+            <div class="tg-msg-row"><div class="tg-user">@friend1</div><div class="tg-text">What's the weather in Bangkok?</div><span class="pill green">✓ replied</span><div class="tg-time">3h ago</div></div>
+            <div class="tg-msg-row"><div class="tg-user">@nuiz</div><div class="tg-text">remind me standup at 9am tomorrow</div><span class="pill gold">⏰ scheduled</span><div class="tg-time">6h ago</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CRON ══════════════════════════════════════════════ -->
+      <div class="panel" id="panel-cron" style="display:none">
+        <div class="cron-wrap">
+          <div class="cron-card">
+            <div class="dash-card-header">⏰ Scheduled Jobs</div>
+            <div class="cron-row">
+              <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+              <div class="cron-name">daily-report</div>
+              <div class="cron-expr">0 8 * * *</div>
+              <div class="cron-desc">Generate and send daily AI news digest to Telegram</div>
+              <div class="cron-last">Last: today 08:00</div>
+              <button class="btn btn-ghost" style="font-size:11px">▶ Run</button>
+              <button class="btn btn-danger" style="font-size:11px">✕</button>
+            </div>
+            <div class="cron-row">
+              <label class="toggle"><input type="checkbox" checked><div class="toggle-track"></div></label>
+              <div class="cron-name">memory-backup</div>
+              <div class="cron-expr">0 */6 * * *</div>
+              <div class="cron-desc">Backup memory store to JSON every 6 hours</div>
+              <div class="cron-last">Last: 2h ago</div>
+              <button class="btn btn-ghost" style="font-size:11px">▶ Run</button>
+              <button class="btn btn-danger" style="font-size:11px">✕</button>
+            </div>
+            <div class="cron-row">
+              <label class="toggle"><input type="checkbox"><div class="toggle-track"></div></label>
+              <div class="cron-name">weekly-summary</div>
+              <div class="cron-expr">0 9 * * MON</div>
+              <div class="cron-desc">Send weekly activity summary every Monday</div>
+              <div class="cron-last" style="opacity:0.5">Never</div>
+              <button class="btn btn-ghost" style="font-size:11px;opacity:0.4">▶ Run</button>
+              <button class="btn btn-danger" style="font-size:11px">✕</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary">＋ New Cron Job</button>
+            <button class="btn btn-ghost">📖 Cron Syntax Guide</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ NODES ═════════════════════════════════════════════ -->
+      <div class="panel" id="panel-nodes" style="display:none;height:100%">
+        <div class="nodes-canvas" style="flex:1;height:100%">
+          <svg class="nodes-svg">
+            <path class="connector" d="M 300,170 C 380,170 370,245 430,245"/>
+            <path class="connector" d="M 300,305 C 380,305 380,265 430,265"/>
+            <path class="connector gold" d="M 600,220 C 660,220 680,140 720,140"/>
+            <path class="connector" d="M 600,260 C 660,260 680,340 720,340"/>
+            <path class="connector gold" d="M 890,140 C 950,140 960,225 1010,245"/>
+            <path class="connector" d="M 890,340 C 950,340 960,270 1010,260"/>
+          </svg>
+
+          <div class="node" style="left:100px;top:140px;width:190px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--blue)"></div>USER INPUT</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">Chat / Telegram</div><div style="font-size:11px;color:var(--text-muted)">Messages from any channel</div></div>
+            <div class="node-port out"></div>
+          </div>
+
+          <div class="node" style="left:100px;top:275px;width:190px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--gold)"></div>SCHEDULER</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">⏰ Cron Jobs</div><div style="font-size:11px;color:var(--text-muted)">Trigger on schedule</div></div>
+            <div class="node-port out"></div>
+          </div>
+
+          <div class="node selected" style="left:430px;top:195px;width:170px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--accent)"></div>AGENT</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">🥚 IKAI Agent</div><div style="font-size:11px;color:var(--text-muted)">claude-sonnet-4-5</div></div>
+            <div class="node-port in"></div>
+            <div class="node-port out"></div>
+          </div>
+
+          <div class="node" style="left:720px;top:105px;width:170px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--gold)"></div>SKILLS</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">🧩 Skill Runner</div><div style="font-size:11px;color:var(--text-muted)">web-search, screenshot…</div></div>
+            <div class="node-port in"></div>
+            <div class="node-port out"></div>
+          </div>
+
+          <div class="node" style="left:720px;top:305px;width:170px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--amber)"></div>MEMORY</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">🧠 SQLite</div><div style="font-size:11px;color:var(--text-muted)">Sessions + long-term KV</div></div>
+            <div class="node-port in"></div>
+            <div class="node-port out"></div>
+          </div>
+
+          <div class="node" style="left:1010px;top:215px;width:160px">
+            <div class="node-header"><div class="node-header-dot" style="background:var(--green)"></div>OUTPUT</div>
+            <div class="node-body"><div style="font-size:13px;font-weight:600;margin-bottom:3px">Response</div><div style="font-size:11px;color:var(--text-muted)">Chat UI · Telegram</div></div>
+            <div class="node-port in"></div>
+          </div>
+
+          <div style="position:absolute;bottom:18px;right:18px;font-size:11px;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--border);padding:7px 12px;border-radius:var(--radius-sm)">
+            Click nodes to select · Drag to move · Scroll to zoom
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ LOGS ══════════════════════════════════════════════ -->
+      <div class="panel" id="panel-logs" style="display:none;height:100%">
+        <div class="logs-wrap">
+          <div class="logs-toolbar">
+            <div class="log-filter active">All</div>
+            <div class="log-filter">INFO</div>
+            <div class="log-filter">DEBUG</div>
+            <div class="log-filter warn">WARN</div>
+            <div class="log-filter error">ERROR</div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <input class="search-input" style="width:180px" placeholder="🔍 Filter…"/>
+              <button class="btn btn-ghost" style="font-size:11px">⬇ Export</button>
+              <button class="btn btn-danger" style="font-size:11px">🗑 Clear</button>
+            </div>
+          </div>
+          <div class="logs-body">
+            <div class="log-line"><span class="log-ts">09:42:11</span><span class="log-lvl INFO">INFO</span><span class="log-src">[agent:loop]</span><span class="log-msg">runAgent start {"sessionId":"ses_247"}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:11</span><span class="log-lvl INFO">INFO</span><span class="log-src">[agent:llm]</span><span class="log-msg">LLM client init {"model":"claude-sonnet-4-5","provider":"anthropic"}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:12</span><span class="log-lvl DEBUG">DEBUG</span><span class="log-src">[agent:loop]</span><span class="log-msg">loop iteration {"n":1}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:12</span><span class="log-lvl DEBUG">DEBUG</span><span class="log-src">[agent:llm]</span><span class="log-msg">callLLM → {"model":"claude-sonnet-4-5","messages":2,"streaming":true}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:14</span><span class="log-lvl INFO">INFO</span><span class="log-src">[agent:loop]</span><span class="log-msg">Dispatching tool {"tool":"web-search","callId":"tc_001"}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:16</span><span class="log-lvl INFO">INFO</span><span class="log-src">[agent:loop]</span><span class="log-msg">Dispatching tool {"tool":"web-search","callId":"tc_002"}</span></div>
+            <div class="log-line"><span class="log-ts">09:42:18</span><span class="log-lvl INFO">INFO</span><span class="log-src">[agent:loop]</span><span class="log-msg">Agent finished {"iterations":2,"toolsUsed":["web-search"]}</span></div>
+            <div class="log-line"><span class="log-ts">09:41:00</span><span class="log-lvl INFO">INFO</span><span class="log-src">[cron]</span><span class="log-msg">Job "daily-report" triggered (0 8 * * *)</span></div>
+            <div class="log-line"><span class="log-ts">09:40:58</span><span class="log-lvl WARN">WARN</span><span class="log-src">[memory:db]</span><span class="log-msg">Slow query: listMessages took 120ms</span></div>
+            <div class="log-line"><span class="log-ts">09:38:22</span><span class="log-lvl DEBUG">DEBUG</span><span class="log-src">[gateway]</span><span class="log-msg">handleCommand {"type":"agent:run","sessionId":"ses_246"}</span></div>
+            <div class="log-line"><span class="log-ts">09:35:01</span><span class="log-lvl INFO">INFO</span><span class="log-src">[telegram]</span><span class="log-msg">Message from @nuiz: "ช่วยสรุป AI news วันนี้หน่อย"</span></div>
+            <div class="log-line"><span class="log-ts">09:30:00</span><span class="log-lvl INFO">INFO</span><span class="log-src">[gateway]</span><span class="log-msg">IKAI initialised {"model":"claude-sonnet-4-5"}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CONFIG ════════════════════════════════════════════ -->
+      <div class="panel" id="panel-config" style="display:none;height:100%">
+        <div class="config-wrap">
+          <div class="config-nav">
+            <div class="config-nav-item active">🤖 Agent</div>
+            <div class="config-nav-item">🧠 Memory</div>
+            <div class="config-nav-item">🌐 LLM / API</div>
+            <div class="config-nav-item">📱 Telegram</div>
+            <div class="config-nav-item">🔒 Security</div>
+            <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--border)">
+              <button class="btn btn-ghost" style="width:100%;font-size:11px">📂 Open config file</button>
+            </div>
+          </div>
+          <div class="config-body">
+            <div class="config-section">
+              <div class="config-section-title">🤖 Agent Settings</div>
+              <div class="config-field">
+                <div><div class="config-field-label">Orchestrator Model</div><div class="config-field-desc">LLM model for main agent loop</div></div>
+                <input class="config-input" value="claude-sonnet-4-5"/>
+              </div>
+              <div class="config-field">
+                <div><div class="config-field-label">Max Iterations</div><div class="config-field-desc">Max tool-call loops per session</div></div>
+                <input class="config-input" value="10" style="width:80px"/>
+              </div>
+              <div class="config-field">
+                <div><div class="config-field-label">Skills Path</div><div class="config-field-desc">Directory for custom skill YAML files</div></div>
+                <input class="config-input" value="./skills"/>
+              </div>
+            </div>
+            <div class="config-section">
+              <div class="config-section-title">🌐 LLM / API</div>
+              <div class="config-field">
+                <div><div class="config-field-label">API Key</div><div class="config-field-desc">Anthropic API key</div></div>
+                <input class="config-input secret" value="sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx"/>
+              </div>
+              <div class="config-field">
+                <div><div class="config-field-label">Base URL</div><div class="config-field-desc">Override API endpoint</div></div>
+                <input class="config-input" value="https://api.anthropic.com"/>
+              </div>
+              <div class="config-field">
+                <div><div class="config-field-label">Max Tokens</div><div class="config-field-desc">Max completion tokens</div></div>
+                <input class="config-input" value="8192" style="width:80px"/>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary">💾 Save Changes</button>
+              <button class="btn btn-ghost">↺ Reset Defaults</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-Agents placeholder -->
+      <div class="panel" id="panel-sub-agents" style="display:none;height:100%;align-items:center;justify-content:center">
+        <div style="text-align:center;color:var(--text-muted)">
+          <div style="font-size:52px;margin-bottom:16px">🐣</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text-secondary);margin-bottom:8px">Sub-Agents</div>
+          <div style="font-size:13px">Coming soon — spawn specialized sub-agents</div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+  const titles = {
+    'dashboard':'Dashboard','sessions':'Sessions','memory':'Memory',
+    'agent-main':'Main Agent','sub-agents':'Sub-Agents','skills':'Skills',
+    'telegram':'Channels · Telegram','cron':'Cron Jobs',
+    'nodes':'Nodes','logs':'Logs','config':'Config',
+  };
+
+  function switchPanel(id) {
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const nav = document.querySelector(`[data-panel="${id}"]`);
+    if (nav) nav.classList.add('active');
+    document.querySelectorAll('.panel').forEach(el => { el.style.display='none'; el.classList.remove('active'); });
+    const panel = document.getElementById(`panel-${id}`);
+    if (panel) { panel.style.display='flex'; panel.classList.add('active'); }
+    document.getElementById('topbar-title').textContent = titles[id] ?? id;
+  }
+
+  document.querySelectorAll('.nav-item[data-panel]').forEach(el =>
+    el.addEventListener('click', () => switchPanel(el.dataset.panel))
+  );
+
+  document.querySelectorAll('.log-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.logs-toolbar').querySelectorAll('.log-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.config-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      item.closest('.config-nav').querySelectorAll('.config-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.chat-textarea').forEach(ta => {
+    ta.addEventListener('input', () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    });
+  });
+</script>
+</body>
+</html>

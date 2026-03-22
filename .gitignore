@@ -1,0 +1,32 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts
+*.d.ts.map
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# Config with secrets — copy from claw.config.example.toml
+claw.config.toml
+
+# Electron build output
+out/
+release/
+
+# Vite
+.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*

@@ -1,0 +1,21 @@
+{
+  "name": "@claw/app-main",
+  "version": "0.1.0",
+  "description": "Electron main process — tray icon, popup window, IPC handlers",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "electron dist/index.js"
+  },
+  "dependencies": {
+    "@claw/cron": "*",
+    "@claw/gateway": "*",
+    "@claw/memory": "*",
+    "electron": "^31.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}

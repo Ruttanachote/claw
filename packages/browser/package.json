@@ -1,0 +1,18 @@
+{
+  "name": "@claw/browser",
+  "version": "0.1.0",
+  "description": "Puppeteer CDP wrapper — launch, navigate, snapshot, click, type, screenshot",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "puppeteer": "^22.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf node_modules/better-sqlite3)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const b = require\\(''C:/Users/nui-j/Desktop/AI-CODER/claw/node_modules/better-sqlite3''\\); console.log\\(''NMV:'', process.versions.modules\\)\")",
+      "Bash(\"c:\\\\Users\\\\nui-j\\\\Desktop\\\\AI-CODER\\\\claw\\\\node_modules\\\\electron\\\\dist\\\\electron.exe\" --version)",
+      "Bash(node -e \"const b = require\\(''bindings''\\); console.log\\(b.getFileName\\({bindings:''better_sqlite3'', module_root:''c:/Users/nui-j/Desktop/AI-CODER/claw/node_modules/better-sqlite3''}\\)\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(HOME=\"$USERPROFILE/.electron-gyp\" \"c:/Users/nui-j/Desktop/AI-CODER/claw/node_modules/.bin/node-gyp\" rebuild --target=31.7.7 --arch=x64 --dist-url=https://electronjs.org/headers)"
+    ]
+  }
+}

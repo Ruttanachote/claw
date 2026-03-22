@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claw UI Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #141414;
+      --surface:      #1e1e1e;
+      --surface-2:    #282828;
+      --border:       #333;
+      --text:         #e8e8e8;
+      --text-dim:     #666;
+      --text-muted:   #999;
+      --accent:       #7c6af7;
+      --accent-hover: #9b8eff;
+      --accent-dim:   rgba(124,106,247,0.15);
+      --user-bg:      #23203a;
+      --user-border:  #3d3570;
+      --error-bg:     rgba(220,80,80,0.12);
+      --error-border: rgba(220,80,80,0.4);
+      --danger:       #e05c5c;
+      --radius:       10px;
+      --radius-sm:    6px;
+      --font:         "Inter", system-ui, -apple-system, sans-serif;
+      --font-mono:    "JetBrains Mono", "Fira Code", monospace;
+      --shadow:       0 4px 24px rgba(0,0,0,0.5);
+    }
+
+    html, body {
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Phone-like frame */
+    .frame {
+      width: 420px;
+      height: 560px;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px #333, 0 32px 80px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .claw-app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* Header */
+    .claw-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .header-brand { display: flex; align-items: center; gap: 7px; }
+    .brand-icon { font-size: 16px; }
+    .brand-name { font-weight: 600; font-size: 14px; letter-spacing: 0.02em; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+
+    .btn-icon {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .btn-icon:hover { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+    .btn-new { font-size: 20px; font-weight: 300; color: var(--accent); }
+    .btn-new:hover { color: var(--accent-hover); }
+    .session-count {
+      position: absolute; top: 3px; right: 3px;
+      min-width: 14px; height: 14px;
+      background: var(--accent); color: #fff;
+      font-size: 9px; font-weight: 700;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 3px;
+    }
+
+    /* Session panel */
+    .session-panel {
+      position: absolute; top: 48px; right: 10px;
+      width: 240px; max-height: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow-y: auto;
+      z-index: 100;
+      display: flex; flex-direction: column;
+      padding: 6px;
+    }
+    .session-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 7px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .session-item.active { background: var(--accent-dim); border-color: var(--accent); }
+    .session-label { font-size: 12px; font-family: var(--font-mono); color: var(--text); flex: 1; }
+    .session-item.active .session-label { color: var(--accent-hover); }
+    .session-time { font-size: 11px; color: var(--text-dim); }
+    .session-del { background: none; border: none; color: var(--text-dim); font-size: 10px; cursor: pointer; padding: 2px 4px; }
+    .session-del:hover { color: var(--danger); }
+
+    /* Messages */
+    .claw-messages {
+      flex: 1; overflow-y: auto;
+      padding: 14px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .claw-messages::-webkit-scrollbar { width: 4px; }
+    .claw-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .empty-state { margin: auto; text-align: center; color: var(--text-dim); padding: 20px; }
+    .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.5; }
+
+    .msg { display: flex; flex-direction: column; gap: 3px; animation: msgIn 0.18s ease; }
+    @keyframes msgIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .msg-role { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+    .msg-content { padding: 9px 12px; border-radius: var(--radius); font-size: 13px; line-height: 1.6; border: 1px solid transparent; }
+    .msg-user { align-items: flex-end; }
+    .msg-user .msg-role { color: #a094ff; }
+    .msg-user .msg-content { background: var(--user-bg); border-color: var(--user-border); border-bottom-right-radius: 3px; }
+    .msg-assistant .msg-content { background: var(--surface); border-color: var(--border); border-bottom-left-radius: 3px; }
+    .msg-typing .msg-content { background: var(--surface); border-color: var(--border); border-bottom-left-radius: 3px; color: var(--text-muted); }
+
+    /* Typing indicator */
+    .typing-dots span {
+      display: inline-block; width: 5px; height: 5px;
+      background: var(--text-muted); border-radius: 50%; margin: 0 2px;
+      animation: bounce 1.2s ease infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-4px);} }
+
+    /* Progress */
+    .claw-progress {
+      flex-shrink: 0; padding: 0 12px;
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.2s ease, padding 0.2s ease;
+      background: var(--surface);
+      border-top: 1px solid transparent;
+    }
+    .claw-progress.visible { max-height: 48px; padding: 8px 12px; border-top-color: var(--border); }
+    .progress-bar {
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 50%, var(--accent) 100%);
+      background-size: 200% 100%;
+      border-radius: 1px;
+      animation: shimmer 1.2s linear infinite;
+      margin-bottom: 5px;
+    }
+    @keyframes shimmer { 0%{background-position:200% center;} 100%{background-position:-200% center;} }
+    .progress-text { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+    .progress-step { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+    .progress-msg { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* Input */
+    .claw-input-area {
+      flex-shrink: 0; display: flex; align-items: flex-end; gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .claw-input {
+      flex: 1; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.5;
+      padding: 8px 12px; resize: none; outline: none;
+      min-height: 36px; max-height: 120px;
+      transition: border-color 0.15s;
+    }
+    .claw-input::placeholder { color: var(--text-dim); }
+    .claw-input:focus { border-color: var(--accent); }
+    .btn-send {
+      flex-shrink: 0; width: 34px; height: 34px;
+      border-radius: var(--radius-sm);
+      background: var(--accent); color: #fff; border: none;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-send:hover { background: var(--accent-hover); }
+    .btn-send:active { transform: scale(0.93); }
+    .btn-send.loading { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+
+    /* Label */
+    .preview-label {
+      position: absolute; bottom: -28px; left: 0; right: 0;
+      text-align: center; font-size: 11px; color: #555;
+      font-family: var(--font);
+    }
+  </style>
+</head>
+<body>
+
+<div style="position:relative;">
+  <div class="frame">
+    <div class="claw-app" id="app"></div>
+  </div>
+  <div class="preview-label">Claw v0.1.0 — UI Preview (interactive demo)</div>
+</div>
+
+<script>
+// ── Mock data ─────────────────────────────────────────────────
+const MOCK_SESSIONS = [
+  { id: "a1b2c3d4-e5f6", updatedAt: Date.now() - 60000 },
+  { id: "f9e8d7c6-b5a4", updatedAt: Date.now() - 3600000 },
+  { id: "12345678-abcd", updatedAt: Date.now() - 86400000 },
+];
+
+const MOCK_REPLIES = [
+  "ได้เลยครับ! กำลังดำเนินการให้...",
+  "เสร็จแล้วครับ ผมได้ทำตามที่ขอแล้ว ผลลัพธ์อยู่ด้านบนครับ",
+  "โอเคครับ ผมเข้าใจแล้ว ให้ผมช่วยอะไรเพิ่มเติมได้บ้างครับ?",
+  "ผมได้ screenshot หน้าเว็บให้แล้วครับ ภาพอยู่ใน `~/.claw/screenshots/` นะครับ",
+  "ค้นหาเสร็จแล้วครับ พบผลลัพธ์ที่เกี่ยวข้อง 5 รายการ ต้องการให้สรุปไหมครับ?",
+];
+
+const MOCK_PROGRESS = [
+  { step: "thinking", msg: "Analyzing your request…" },
+  { step: "tool",     msg: "Calling browser → navigate()" },
+  { step: "tool",     msg: "Taking screenshot…" },
+  { step: "done",     msg: "Composing response" },
+];
+
+// ── State ─────────────────────────────────────────────────────
+let messages = [
+  { role: "assistant", content: "สวัสดีครับ ผมคือ Claw 🐾 บอกได้เลยว่าอยากให้ทำอะไร" }
+];
+let currentSession = MOCK_SESSIONS[0];
+let isRunning = false;
+let showSessions = false;
+
+// ── Build HTML ────────────────────────────────────────────────
+function build() {
+  document.getElementById("app").innerHTML = `
+    <header class="claw-header">
+      <div class="header-brand">
+        <span class="brand-icon">🐾</span>
+        <span class="brand-name">Claw</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" id="btn-sessions" title="Sessions">
+          ⊞<span class="session-count">3</span>
+        </button>
+        <button class="btn-icon btn-new" id="btn-new" title="New session">＋</button>
+      </div>
+    </header>
+
+    <div id="session-panel" class="session-panel" style="display:none">
+      ${MOCK_SESSIONS.map((s, i) => `
+        <div class="session-item ${i===0?'active':''}" style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:6px;cursor:pointer;border:1px solid ${i===0?'var(--accent)':'transparent'};background:${i===0?'var(--accent-dim)':'transparent'}">
+          <span class="session-label">${s.id}</span>
+          <span class="session-time">${relTime(s.updatedAt)}</span>
+          <button class="session-del">✕</button>
+        </div>`).join("")}
+    </div>
+
+    <main class="claw-messages" id="messages"></main>
+
+    <div class="claw-progress" id="progress">
+      <div class="progress-bar"></div>
+      <div class="progress-text">
+        <span class="progress-step" id="p-step"></span>
+        <span class="progress-msg"  id="p-msg"></span>
+      </div>
+    </div>
+
+    <footer class="claw-input-area">
+      <textarea class="claw-input" id="input" placeholder="Ask Claw something…" rows="1"></textarea>
+      <button class="btn-send" id="btn-send">↑</button>
+    </footer>`;
+
+  renderMessages();
+  bindEvents();
+}
+
+function relTime(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return "just now";
+  if (d < 3600000) return Math.floor(d/60000) + "m ago";
+  if (d < 86400000) return Math.floor(d/3600000) + "h ago";
+  return Math.floor(d/86400000) + "d ago";
+}
+
+// ── Render messages ───────────────────────────────────────────
+function renderMessages() {
+  const el = document.getElementById("messages");
+  if (!el) return;
+  el.innerHTML = messages.map(m => `
+    <div class="msg msg-${m.role}">
+      <span class="msg-role">${m.role === "user" ? "You" : "Claw"}</span>
+      <div class="msg-content">${m.content.replace(/\n/g,"<br>")}</div>
+    </div>`).join("");
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── Simulate agent run ────────────────────────────────────────
+async function runAgent(text) {
+  if (isRunning) return;
+  isRunning = true;
+
+  const input = document.getElementById("input");
+  const btn   = document.getElementById("btn-send");
+  const prog  = document.getElementById("progress");
+  input.disabled = true;
+  btn.classList.add("loading");
+  btn.textContent = "…";
+
+  messages.push({ role: "user", content: text });
+  renderMessages();
+
+  // Show progress steps
+  for (const p of MOCK_PROGRESS) {
+    document.getElementById("p-step").textContent = p.step;
+    document.getElementById("p-msg").textContent  = p.msg;
+    prog.classList.add("visible");
+    await sleep(600);
+  }
+
+  // Show typing indicator
+  messages.push({ role: "typing", content: '<div class="typing-dots"><span></span><span></span><span></span></div>' });
+  renderMessages();
+  await sleep(800);
+
+  // Replace with reply
+  messages.pop();
+  const reply = MOCK_REPLIES[Math.floor(Math.random() * MOCK_REPLIES.length)];
+  messages.push({ role: "assistant", content: reply });
+  renderMessages();
+
+  prog.classList.remove("visible");
+  isRunning = false;
+  input.disabled = false;
+  btn.classList.remove("loading");
+  btn.textContent = "↑";
+  input.focus();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Events ────────────────────────────────────────────────────
+function bindEvents() {
+  const input = document.getElementById("input");
+  const btn   = document.getElementById("btn-send");
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const v = input.value.trim();
+      if (v) { input.value = ""; input.style.height="auto"; runAgent(v); }
+    }
+  });
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  });
+  btn.addEventListener("click", () => {
+    const v = input.value.trim();
+    if (v) { input.value = ""; input.style.height="auto"; runAgent(v); }
+  });
+
+  document.getElementById("btn-sessions").addEventListener("click", e => {
+    e.stopPropagation();
+    showSessions = !showSessions;
+    document.getElementById("session-panel").style.display = showSessions ? "flex" : "none";
+  });
+
+  document.getElementById("btn-new").addEventListener("click", () => {
+    messages = [{ role: "assistant", content: "New session started. What would you like to do?" }];
+    renderMessages();
+    showSessions = false;
+    document.getElementById("session-panel").style.display = "none";
+  });
+
+  document.addEventListener("click", () => {
+    if (showSessions) {
+      showSessions = false;
+      document.getElementById("session-panel").style.display = "none";
+    }
+  });
+}
+
+build();
+</script>
+</body>
+</html>

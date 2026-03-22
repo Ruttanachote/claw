@@ -1,0 +1,19 @@
+{
+  "name": "@claw/gateway",
+  "version": "0.1.0",
+  "description": "IPC router and job queue — entry point for app/main",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@claw/agent": "*",
+    "@claw/memory": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "claw",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "app/*"
+  ],
+  "main": "app/main/dist/index.js",
+  "scripts": {
+    "build": "npm run build:packages && npm run build --workspace=app/main --workspace=app/renderer",
+    "build:packages": "npm run build --workspace=packages/memory --workspace=packages/skill-runner --workspace=packages/browser --workspace=packages/agent --workspace=packages/gateway --workspace=packages/cron",
+    "rebuild": "electron-rebuild",
+    "start": "cross-env CLAW_CONFIG=./claw.config.toml electron .",
+    "dev": "CLAW_DEV=1 concurrently \"npm run dev --workspace=app/renderer\" \"npm run dev --workspace=app/main\" \"wait-on http://localhost:5173 && electron .\"",
+    "typecheck": "tsc -p tsconfig.check.json --noEmit && tsc -p app/renderer/tsconfig.json --noEmit && tsc -p packages/browser/tsconfig.json --noEmit",
+    "test": "node test/e2e.cjs",
+    "clean": "find . -name 'dist' -not -path '*/node_modules/*' -exec rm -rf {} + 2>/dev/null; true"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.3",
+    "cross-env": "^10.1.0",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@claw/agent",
+  "version": "0.1.0",
+  "description": "Orchestrator loop + sub-agents. Only package that calls LLM directly.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@claw/browser": "*",
+    "@claw/memory": "*",
+    "@claw/skill-runner": "*",
+    "openai": "^4.52.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    />
+    <title>IKAI</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="ikai-app">
+
+      <!-- ══ SIDEBAR ══════════════════════════════════════════════════════ -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <span class="logo-egg">🥚</span>
+          <span class="logo-name">IKAI</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <button class="nav-item active" data-panel="dashboard">
+            <span class="nav-icon">⬡</span>
+            <span class="nav-label">Dashboard</span>
+          </button>
+          <button class="nav-item" data-panel="sessions">
+            <span class="nav-icon">💬</span>
+            <span class="nav-label">Sessions</span>
+          </button>
+          <button class="nav-item" data-panel="memory">
+            <span class="nav-icon">🧠</span>
+            <span class="nav-label">Memory</span>
+          </button>
+
+          <div class="nav-group-label">Agents</div>
+          <button class="nav-item" data-panel="agent">
+            <span class="nav-icon">🤖</span>
+            <span class="nav-label">Main Agent</span>
+          </button>
+          <button class="nav-item" data-panel="skills">
+            <span class="nav-icon">⚡</span>
+            <span class="nav-label">Skills</span>
+          </button>
+
+          <div class="nav-group-label">Automation</div>
+          <button class="nav-item" data-panel="cron">
+            <span class="nav-icon">⏰</span>
+            <span class="nav-label">Cron Jobs</span>
+          </button>
+
+          <div class="nav-group-label">System</div>
+          <button class="nav-item" data-panel="terminal">
+            <span class="nav-icon">💻</span>
+            <span class="nav-label">Terminal</span>
+          </button>
+          <button class="nav-item" data-panel="logs">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Logs</span>
+          </button>
+          <button class="nav-item" data-panel="config">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Config</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="model-badge" id="model-badge">—</div>
+        </div>
+      </aside>
+
+      <!-- ══ MAIN AREA ════════════════════════════════════════════════════ -->
+      <main class="main-area">
+
+        <!-- ── TOP BAR ──────────────────────────────────────────────── -->
+        <header class="topbar" id="topbar">
+          <span class="topbar-title" id="topbar-title">Dashboard</span>
+          <div class="topbar-actions">
+            <button class="btn-icon" id="btn-new-session" title="New session">＋</button>
+          </div>
+        </header>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Dashboard                                           -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-dashboard">
+          <div class="dashboard-grid">
+            <div class="stat-card" id="stat-sessions">
+              <div class="stat-icon">💬</div>
+              <div class="stat-body">
+                <div class="stat-value" id="stat-sessions-val">—</div>
+                <div class="stat-label">Total Sessions</div>
+              </div>
+            </div>
+            <div class="stat-card" id="stat-messages">
+              <div class="stat-icon">✉️</div>
+              <div class="stat-body">
+                <div class="stat-value" id="stat-messages-val">—</div>
+                <div class="stat-label">Messages</div>
+              </div>
+            </div>
+            <div class="stat-card" id="stat-tools">
+              <div class="stat-icon">🔧</div>
+              <div class="stat-body">
+                <div class="stat-value" id="stat-tools-val">—</div>
+                <div class="stat-label">Tool Calls</div>
+              </div>
+            </div>
+            <div class="stat-card" id="stat-memories">
+              <div class="stat-icon">🧠</div>
+              <div class="stat-body">
+                <div class="stat-value" id="stat-mem-val">—</div>
+                <div class="stat-label">Memories</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-section">
+            <div class="dash-section-title">Top Tools Used</div>
+            <div class="tool-bars" id="tool-bars">
+              <div class="tool-bar-empty">No data yet</div>
+            </div>
+          </div>
+
+          <div class="dash-section">
+            <div class="dash-section-title">Quick Actions</div>
+            <div class="quick-actions">
+              <button class="quick-btn" id="qa-chat">
+                <span>💬</span> New Chat
+              </button>
+              <button class="quick-btn" id="qa-memory">
+                <span>🧠</span> View Memory
+              </button>
+              <button class="quick-btn" id="qa-logs">
+                <span>📋</span> Live Logs
+              </button>
+              <button class="quick-btn" id="qa-config">
+                <span>⚙️</span> Config
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Sessions (split: list + chat)                       -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel panel-split" id="panel-sessions" style="display:none">
+          <!-- Session list sidebar -->
+          <aside class="session-list-pane" id="session-list-pane">
+            <div class="session-list-header">
+              <span>Sessions</span>
+              <button class="btn-sm-accent" id="btn-new-sess">＋ New</button>
+            </div>
+            <div class="session-list" id="session-list">
+              <div class="list-empty">No sessions yet</div>
+            </div>
+          </aside>
+
+          <!-- Chat pane -->
+          <div class="chat-pane" id="chat-pane">
+            <div class="chat-empty-state" id="chat-empty">
+              <div class="egg-glow">🥚</div>
+              <p>Select a session or start a new chat</p>
+            </div>
+
+            <div class="chat-body" id="chat-body" style="display:none">
+
+              <!-- ── Main split: chat left · terminal right ── -->
+              <div class="chat-main-area" id="chat-main-area">
+
+                <div class="chat-messages-wrap">
+                  <div class="chat-messages" id="chat-messages"></div>
+                </div>
+
+                <!-- Terminal mini pane (hidden until toggled) -->
+                <div class="term-mini-pane" id="term-mini-pane" style="display:none">
+                  <div class="term-mini-header">
+                    <div class="term-mini-dots">
+                      <span class="term-dot red"></span>
+                      <span class="term-dot yellow"></span>
+                      <span class="term-dot green"></span>
+                    </div>
+                    <span class="term-mini-title">💻 Shell — Agent feed</span>
+                    <button class="term-mini-close" id="btn-close-term-mini" title="Close">✕</button>
+                  </div>
+                  <div class="term-mini-history" id="term-mini-history">
+                    <div class="term-welcome">
+                      <span class="term-dim"># Shell commands the agent runs appear here in real-time.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ── File Viewer Pane ──────────────────────────── -->
+                <div class="file-viewer-pane" id="file-viewer-pane" style="display:none">
+                  <div class="file-viewer-header">
+                    <span class="file-viewer-icon" id="fv-icon">📄</span>
+                    <span class="file-viewer-name" id="fv-name">file</span>
+                    <button class="file-viewer-close" id="btn-close-file-viewer" title="Close">✕</button>
+                  </div>
+                  <div class="file-viewer-body" id="fv-body">
+                    <div class="fv-empty">Select a file to view</div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="chat-progress" id="chat-progress">
+                <div class="progress-bar-anim"></div>
+                <div class="progress-text">
+                  <span class="progress-step" id="progress-step">INIT</span>
+                  <span class="progress-msg" id="progress-msg">Loading…</span>
+                </div>
+              </div>
+
+              <div class="chat-input-area">
+                <button class="btn-term-toggle" id="btn-toggle-term" title="Toggle terminal">💻</button>
+                <textarea
+                  class="chat-input"
+                  id="chat-input"
+                  placeholder="Message IKAI…"
+                  rows="1"
+                ></textarea>
+                <button class="btn-send" id="btn-send">▲</button>
+                <button class="btn-stop hidden" id="btn-stop">■</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Memory                                              -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-memory" style="display:none">
+          <div class="panel-toolbar">
+            <input class="search-input" id="memory-search" placeholder="🔍  Search memories…" />
+            <button class="btn-sm-accent" id="btn-add-memory">＋ Add</button>
+          </div>
+          <div class="memory-grid" id="memory-grid">
+            <div class="list-empty">No memories stored</div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Main Agent                                          -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-agent" style="display:none">
+          <div class="agent-hero">
+            <div class="agent-glow-ring">
+              <span class="agent-egg">🥚</span>
+            </div>
+            <div class="agent-info">
+              <div class="agent-name">IKAI</div>
+              <div class="agent-tagline">Personal AI Agent · Always online</div>
+            </div>
+          </div>
+
+          <div class="agent-tools-grid" id="agent-tools-grid">
+            <div class="agent-tool-card">
+              <span class="tool-icon">🌐</span>
+              <span class="tool-name">browser</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">💻</span>
+              <span class="tool-name">shell</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">📄</span>
+              <span class="tool-name">read_file</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">✏️</span>
+              <span class="tool-name">write_file</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">📁</span>
+              <span class="tool-name">list_dir</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">🔍</span>
+              <span class="tool-name">memory_read</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">💾</span>
+              <span class="tool-name">memory_write</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">⚡</span>
+              <span class="tool-name">run_skill</span>
+            </div>
+            <div class="agent-tool-card">
+              <span class="tool-icon">⏰</span>
+              <span class="tool-name">schedule_cron</span>
+            </div>
+          </div>
+
+          <div class="agent-stats-row" id="agent-stats-row">
+            <!-- populated by JS -->
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Skills                                              -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-skills" style="display:none">
+          <div class="panel-toolbar">
+            <span class="panel-subtitle">Loaded skill library</span>
+          </div>
+          <div class="skills-grid" id="skills-grid">
+            <div class="list-empty">No skills loaded</div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Cron                                                -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-cron" style="display:none">
+          <div class="panel-toolbar">
+            <span class="panel-subtitle">Scheduled automations</span>
+          </div>
+          <div class="cron-list-wrap" id="cron-list-wrap">
+            <div class="list-empty">No cron jobs scheduled</div>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Terminal                                            -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel panel-terminal" id="panel-terminal" style="display:none">
+          <div class="term-topbar">
+            <div class="term-dots">
+              <span class="term-dot red"></span>
+              <span class="term-dot yellow"></span>
+              <span class="term-dot green"></span>
+            </div>
+            <span class="term-title" id="term-shell-label">shell</span>
+            <div class="term-topbar-actions">
+              <span class="term-badge-agent" title="Commands run by IKAI agent are echoed here">🤖 Agent feed ON</span>
+              <button class="btn-sm" id="btn-clear-term">Clear</button>
+            </div>
+          </div>
+          <div class="term-history" id="term-history">
+            <div class="term-welcome">
+              <span class="term-dim"># IKAI Terminal — agent commands appear here in real-time.</span><br>
+              <span class="term-dim"># Type a command below to run it directly.</span>
+            </div>
+          </div>
+          <div class="term-input-row">
+            <span class="term-prompt" id="term-prompt">$</span>
+            <input
+              class="term-input"
+              id="term-input"
+              type="text"
+              placeholder="run a command…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button class="btn-run" id="btn-run-cmd">▶</button>
+          </div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Logs                                                -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-logs" style="display:none">
+          <div class="panel-toolbar">
+            <div class="log-filters" id="log-filters">
+              <button class="log-filter active" data-level="">ALL</button>
+              <button class="log-filter" data-level="error">ERROR</button>
+              <button class="log-filter" data-level="warn">WARN</button>
+              <button class="log-filter" data-level="info">INFO</button>
+              <button class="log-filter" data-level="debug">DEBUG</button>
+            </div>
+            <button class="btn-sm" id="btn-clear-logs">Clear</button>
+          </div>
+          <div class="log-stream" id="log-stream"></div>
+        </section>
+
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <!-- PANEL: Config                                              -->
+        <!-- ══════════════════════════════════════════════════════════ -->
+        <section class="panel" id="panel-config" style="display:none">
+          <div class="config-body">
+            <div class="config-section">
+              <div class="config-section-title">LLM</div>
+              <div class="config-row">
+                <span class="config-label">Provider</span>
+                <span class="config-value mono" id="cfg-provider">—</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">Model</span>
+                <span class="config-value mono" id="cfg-model">—</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">Base URL</span>
+                <span class="config-value mono" id="cfg-base-url">—</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">Max Tokens</span>
+                <span class="config-value mono" id="cfg-max-tokens">—</span>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">Agent</div>
+              <div class="config-row">
+                <span class="config-label">Max Iterations</span>
+                <span class="config-value mono" id="cfg-max-iter">—</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">Max Context Msgs</span>
+                <span class="config-value mono" id="cfg-max-ctx">—</span>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">Storage</div>
+              <div class="config-row">
+                <span class="config-label">DB Path</span>
+                <span class="config-value mono small" id="cfg-db-path">—</span>
+              </div>
+              <div class="config-row">
+                <span class="config-label">Skills Paths</span>
+                <span class="config-value mono small" id="cfg-skills-paths">—</span>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">Logging</div>
+              <div class="config-row">
+                <span class="config-label">Log Level</span>
+                <span class="config-value mono" id="cfg-log-level">—</span>
+              </div>
+            </div>
+
+            <div class="config-section">
+              <div class="config-section-title">File</div>
+              <div class="config-row">
+                <span class="config-label">Config file</span>
+                <span class="config-value mono small" id="cfg-config-path">—</span>
+              </div>
+            </div>
+
+            <div class="config-no-config-warn" id="cfg-no-config-warn" style="display:none"></div>
+
+            <div class="config-hint">
+              Config file location: <code>~/.claw/config.toml</code><br>
+              กด Open เพื่อแก้ไข API key และตั้งค่าต่างๆ
+            </div>
+            <button class="btn-primary" id="btn-open-config">Open Config File</button>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
