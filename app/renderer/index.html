@@ -143,9 +143,10 @@
         </section>
 
         <!-- ══════════════════════════════════════════════════════════ -->
-        <!-- PANEL: Sessions (split: list + chat)                       -->
+        <!-- PANEL: Sessions (RESIZABLE: sidebar | chat | artifact)    -->
         <!-- ══════════════════════════════════════════════════════════ -->
         <section class="panel panel-split" id="panel-sessions" style="display:none">
+          
           <!-- Session list sidebar -->
           <aside class="session-list-pane" id="session-list-pane">
             <div class="session-list-header">
@@ -157,6 +158,11 @@
             </div>
           </aside>
 
+          <!-- Vertical resize handle: sidebar <-> chat -->
+          <div class="resize-handle-v" id="resize-handle-sidebar" data-resize="sidebar">
+            <div class="resize-handle-line"></div>
+          </div>
+
           <!-- Chat pane -->
           <div class="chat-pane" id="chat-pane">
             <div class="chat-empty-state" id="chat-empty">
@@ -166,11 +172,35 @@
 
             <div class="chat-body" id="chat-body" style="display:none">
 
-              <!-- ── Main split: chat left · terminal right ── -->
+              <!-- Chat header with search -->
+              <div class="chat-header" id="chat-header">
+                <div class="chat-header-title" id="chat-header-title">Chat</div>
+                <div class="chat-search-wrap">
+                  <button class="btn-icon btn-chat-search" id="btn-chat-search" title="Search chat">🔍</button>
+                </div>
+              </div>
+
+              <!-- Chat search popup -->
+              <div class="chat-search-popup" id="chat-search-popup" style="display:none">
+                <div class="chat-search-input-wrap">
+                  <input type="text" class="chat-search-input" id="chat-search-input" placeholder="Search messages..." />
+                  <span class="chat-search-count" id="chat-search-count"></span>
+                  <button class="chat-search-nav" id="chat-search-prev" title="Previous">↑</button>
+                  <button class="chat-search-nav" id="chat-search-next" title="Next">↓</button>
+                  <button class="chat-search-close" id="chat-search-close" title="Close">✕</button>
+                </div>
+              </div>
+
+              <!-- Main area: chat + terminal/artifact -->
               <div class="chat-main-area" id="chat-main-area">
 
-                <div class="chat-messages-wrap">
+                <!-- Messages area -->
+                <div class="chat-messages-wrap" id="chat-messages-wrap">
                   <div class="chat-messages" id="chat-messages"></div>
+                  <!-- Jump to latest button -->
+                  <button class="jump-to-latest" id="jump-to-latest" style="display:none" title="Jump to latest">
+                    ↓ Jump to latest
+                  </button>
                 </div>
 
                 <!-- Terminal mini pane (hidden until toggled) -->
@@ -181,29 +211,38 @@
                       <span class="term-dot yellow"></span>
                       <span class="term-dot green"></span>
                     </div>
-                    <span class="term-mini-title">💻 Shell — Agent feed</span>
+                    <span class="term-mini-title">💻 Shell</span>
                     <button class="term-mini-close" id="btn-close-term-mini" title="Close">✕</button>
                   </div>
                   <div class="term-mini-history" id="term-mini-history">
                     <div class="term-welcome">
-                      <span class="term-dim"># Shell commands the agent runs appear here in real-time.</span>
+                      <span class="term-dim"># Agent commands appear here</span>
                     </div>
                   </div>
                 </div>
 
-                <!-- ── File Viewer Pane ──────────────────────────── -->
-                <div class="file-viewer-pane" id="file-viewer-pane" style="display:none">
-                  <div class="file-viewer-header">
-                    <span class="file-viewer-icon" id="fv-icon">📄</span>
-                    <span class="file-viewer-name" id="fv-name">file</span>
-                    <button class="file-viewer-close" id="btn-close-file-viewer" title="Close">✕</button>
-                  </div>
-                  <div class="file-viewer-body" id="fv-body">
-                    <div class="fv-empty">Select a file to view</div>
-                  </div>
-                </div>
-
               </div>
+
+              <!-- Horizontal resize handle: chat <-> terminal/artifact -->
+              <div class="resize-handle-v" id="resize-handle-chat" data-resize="chat">
+                <div class="resize-handle-line"></div>
+              </div>
+
+              <!-- Artifact Panel (NEW: Multi-tab) -->
+              <aside class="artifact-panel" id="artifact-panel" style="display:none">
+                <!-- Tab bar -->
+                <div class="artifact-tabs-header" id="artifact-tabs-header">
+                  <div class="artifact-tabs" id="artifact-tabs">
+                    <!-- Tabs injected by JS -->
+                  </div>
+                  <button class="btn-icon artifact-panel-close" id="artifact-panel-close" title="Close panel">✕</button>
+                </div>
+                
+                <!-- Tab content area -->
+                <div class="artifact-tab-content" id="artifact-tab-content">
+                  <!-- Content injected by JS based on active tab -->
+                </div>
+              </aside>
 
               <div class="chat-progress" id="chat-progress">
                 <div class="progress-bar-anim"></div>
@@ -215,6 +254,7 @@
 
               <div class="chat-input-area">
                 <button class="btn-term-toggle" id="btn-toggle-term" title="Toggle terminal">💻</button>
+                <button class="btn-artifact-toggle" id="btn-artifact-toggle" title="Toggle artifact panel">📄</button>
                 <textarea
                   class="chat-input"
                   id="chat-input"
@@ -454,6 +494,7 @@
       </main>
     </div>
 
+    <!-- CodeMirror bundle (lazy loaded) -->
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

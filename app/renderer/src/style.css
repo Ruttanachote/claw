@@ -1585,3 +1585,697 @@ html, body {
   gap: 10px;
 }
 .fv-unsupported-icon { font-size: 36px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEW FEATURES: Resizable Panes, Multi-Tab Artifact, Chat Search, Code Editor
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Resizable Handles ──────────────────────────────────────────────────── */
+.resize-handle-v {
+  width: 6px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  position: relative;
+  transition: background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.resize-handle-v:hover,
+.resize-handle-v.dragging {
+  background: var(--accent-dim);
+}
+.resize-handle-v .resize-handle-line {
+  width: 2px;
+  height: 32px;
+  background: var(--border-light);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+.resize-handle-v:hover .resize-handle-line,
+.resize-handle-v.dragging .resize-handle-line {
+  opacity: 1;
+  background: var(--accent);
+}
+
+/* Session list pane width */
+.session-list-pane {
+  width: var(--session-list-w, 220px);
+  min-width: 160px;
+  max-width: 350px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+}
+
+/* Chat pane flex */
+.chat-pane {
+  flex: 1;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Artifact panel width */
+.artifact-panel {
+  width: var(--artifact-w, 450px);
+  min-width: 300px;
+  max-width: 800px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+}
+
+/* ── Chat Header with Search ───────────────────────────────────────────── */
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-surface2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.chat-header-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+.chat-search-wrap {
+  display: flex;
+  gap: 4px;
+}
+.btn-chat-search {
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+.btn-chat-search:hover {
+  background: var(--bg-surface3);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+
+/* Chat Search Popup */
+.chat-search-popup {
+  background: var(--bg-surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+  animation: slideDown .15s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chat-search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-search-input {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text);
+  font-family: var(--font);
+}
+.chat-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+.chat-search-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  min-width: 50px;
+}
+.chat-search-nav {
+  width: 24px;
+  height: 24px;
+  background: var(--bg-surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-search-nav:hover {
+  background: var(--border);
+  color: var(--text);
+}
+.chat-search-close {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+}
+.chat-search-close:hover { color: var(--danger); }
+
+/* Search highlight */
+.msg-search-highlight {
+  background: var(--gold-dim);
+  color: var(--gold);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+.msg-search-current {
+  background: var(--accent-dim);
+  outline: 2px solid var(--accent);
+  border-radius: 2px;
+}
+
+/* ── Jump to Latest Button ───────────────────────────────────────────── */
+.jump-to-latest {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  animation: pulse 2s infinite;
+  z-index: 10;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 4px 16px var(--accent-glow); }
+  50% { box-shadow: 0 4px 24px var(--accent-glow), 0 0 0 4px var(--accent-dim); }
+}
+.jump-to-latest:hover {
+  background: var(--accent-h);
+}
+
+/* ── Artifact Panel Tabs ──────────────────────────────────────────────── */
+.artifact-tabs-header {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface2);
+  border-bottom: 1px solid var(--border);
+  padding-right: 4px;
+  flex-shrink: 0;
+}
+.artifact-tabs {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.artifact-tabs::-webkit-scrollbar { height: 2px; }
+.artifact-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.artifact-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .12s;
+}
+.artifact-tab:hover {
+  color: var(--text);
+  background: var(--bg-surface3);
+}
+.artifact-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--bg-surface);
+}
+.artifact-tab-icon { font-size: 12px; }
+.artifact-tab-title {
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.artifact-tab-modified {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.artifact-tab-close {
+  width: 16px;
+  height: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all .12s;
+}
+.artifact-tab:hover .artifact-tab-close { opacity: 1; }
+.artifact-tab-close:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.artifact-panel-close {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: var(--r-xs);
+}
+.artifact-panel-close:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* Artifact Tab Content */
+.artifact-tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tab toolbar (Preview/Source/Edit buttons) */
+.ap-tab-toolbar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+.ap-tab-btn {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .12s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ap-tab-btn:hover { color: var(--text); }
+.ap-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.ap-tab-pane {
+  flex: 1;
+  overflow: auto;
+  display: none;
+}
+.ap-tab-pane.active { display: flex; flex-direction: column; }
+
+/* Preview pane */
+.ap-preview {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+}
+
+/* Mermaid preview */
+.ap-mermaid-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+.ap-mermaid-wrap svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* HTML/SVG preview */
+.ap-svg-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+.ap-svg-wrap svg { max-width: 100%; height: auto; }
+
+/* Source code pane */
+.ap-source {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-surface);
+}
+.ap-code {
+  margin: 0;
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre;
+  overflow-x: auto;
+}
+.ap-code code {
+  font-family: inherit;
+}
+
+/* Editor pane (CodeMirror) */
+.ap-editor {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.ap-editor-wrap {
+  flex: 1;
+  overflow: hidden;
+}
+.ap-editor-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-surface2);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ap-editor-save {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-xs);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+}
+.ap-editor-save:hover { background: var(--accent-h); }
+.ap-editor-save:disabled { opacity: 0.5; cursor: not-allowed; }
+.ap-editor-discard {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.ap-editor-discard:hover { color: var(--text); border-color: var(--border-light); }
+
+/* CodeMirror theme overrides */
+.cm-editor {
+  height: 100%;
+  font-size: 12px;
+  background: var(--bg-surface) !important;
+}
+.cm-editor .cm-scroller { font-family: var(--mono); }
+.cm-editor .cm-gutters {
+  background: var(--bg-surface2) !important;
+  border-right: 1px solid var(--border) !important;
+  color: var(--text-dim);
+}
+.cm-editor .cm-activeLineGutter {
+  background: var(--bg-surface3) !important;
+}
+.cm-editor .cm-activeLine {
+  background: var(--bg-surface2) !important;
+}
+.cm-editor .cm-selectionBackground {
+  background: var(--accent-dim) !important;
+}
+.cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--accent-dim) !important;
+}
+.cm-editor .cm-cursor {
+  border-left-color: var(--accent) !important;
+}
+
+/* Artifact panel empty state */
+.ap-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+}
+.ap-empty-icon { font-size: 48px; opacity: 0.3; }
+
+/* Loading state */
+.ap-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.ap-loading::before {
+  content: "⟳";
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error state */
+.ap-error {
+  padding: 16px;
+  color: var(--danger);
+  font-size: 12px;
+  font-family: var(--mono);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--r-xs);
+  margin: 16px;
+}
+
+/* ── Artifact Toggle Button ───────────────────────────────────────────── */
+.btn-artifact-toggle {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+  margin-right: 8px;
+}
+.btn-artifact-toggle:hover {
+  background: var(--bg-surface3);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+.btn-artifact-toggle.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Message Enhancements ─────────────────────────────────────────────── */
+.msg {
+  position: relative;
+}
+.msg:hover .msg-actions {
+  opacity: 1;
+}
+.msg-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .12s;
+}
+.msg-action-btn {
+  width: 24px;
+  height: 24px;
+  background: var(--bg-surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.msg-action-btn:hover {
+  background: var(--bg-surface3);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+.msg-time {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+/* ── Artifact Card Improvements ───────────────────────────────────────── */
+.artifact-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition: all .12s;
+}
+.artifact-card:hover {
+  background: var(--bg-surface3);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+}
+.artifact-card-icon {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-dim);
+  border-radius: var(--r-sm);
+}
+.artifact-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.artifact-card-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+.artifact-card-preview {
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.artifact-card-open {
+  padding: 6px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-xs);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+}
+.artifact-card-open:hover { background: var(--accent-h); }
+
+/* ── Inline Code Block Improvements ─────────────────────────────────── */
+.inline-code-block {
+  background: var(--bg-surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  margin: 8px 0;
+}
+.icb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--bg-surface3);
+  border-bottom: 1px solid var(--border);
+}
+.icb-lang {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-family: var(--mono);
+}
+.icb-pre {
+  margin: 0;
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--text);
+}
+.icb-pre code { font-family: inherit; }
+.btn-copy-code {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn-copy-code:hover {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* ── Responsive adjustments ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .artifact-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: 100%;
+    z-index: 100;
+    box-shadow: -4px 0 24px rgba(0,0,0,.5);
+  }
+  .resize-handle-v[data-resize="chat"] { display: none; }
+}

@@ -194,6 +194,48 @@ let currentPanel: Panel = "dashboard";
 let currentSessionId = "";
 let isRunning = false;
 let streamingContent = "";
+
+// ══ NEW: Resizable Panes State ════════════════════════════════════════════
+interface PaneSizes {
+  sessionList: number;
+  chat: number;
+  artifact: number;
+}
+let paneSizes: PaneSizes = {
+  sessionList: 220,
+  chat: 0, // flex: 1
+  artifact: 450,
+};
+let isResizing = false;
+let resizeTarget: "sessionList" | "artifact" | null = null;
+
+// ══ NEW: Multi-Tab Artifact System ════════════════════════════════════════
+interface ArtifactTab {
+  id: string;
+  kind: ArtifactKind;
+  title: string;
+  icon: string;
+  content: string;
+  lang?: string;
+  filePath?: string;
+  isModified: boolean;
+  originalContent: string;
+}
+let artifactTabs: ArtifactTab[] = [];
+let activeTabId: string | null = null;
+const MAX_TABS = 5;
+
+// ══ NEW: Chat Search State ════════════════════════════════════════════════
+let chatSearchQuery = "";
+let chatSearchMatches: HTMLElement[] = [];
+let chatSearchCurrentIndex = -1;
+let chatAutoScrollPaused = false;
+
+// ══ NEW: CodeMirror Editor ════════════════════════════════════════════════
+let codeMirrorInstance: unknown = null; // CodeMirror editor instance
+let currentEditingTab: ArtifactTab | null = null;
+
+// Legacy state
 let stopOnProgress: (() => void) | null = null;
 let stopOnToken:    (() => void) | null = null;
 let logFilter = "";   // "" = all
@@ -952,136 +994,11 @@ function openArtifactPanelShell(panel: HTMLElement, body: HTMLElement,
   body.innerHTML = `<div class="ap-loading">⟳ Loading…</div>`;
 }
 
-async function openArtifactPanel(artifactId: string): Promise<void> {
-  const data = artifactStore.get(artifactId);
-  if (!data) return;
-  const panel   = document.getElementById("artifact-panel");
-  const body    = document.getElementById("ap-body");
-  const titleEl = document.getElementById("ap-title");
-  const iconEl  = document.getElementById("ap-icon");
-  const copyBtn = document.getElementById("btn-ap-copy") as HTMLButtonElement | null;
-  if (!panel || !body) return;
 
-  openArtifactPanelShell(panel, body, titleEl, iconEl, data.icon, data.title);
-  if (copyBtn) { copyBtn.dataset["copy"] = data.content; delete copyBtn.dataset["filePath"]; }
-
-  switch (data.kind) {
-    case "mermaid": {
-      const svgId = `apmmd-${Date.now()}`;
-      body.innerHTML = `<div class="ap-mermaid-wrap" id="${svgId}">
-        <span class="ap-loading">⟳ Rendering diagram…</span>
-      </div>`;
-      try {
-        const { svg } = await mermaid.render(`svg-${svgId}`, data.content);
-        const el = document.getElementById(svgId);
-        if (el) el.innerHTML = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
-      } catch (e) {
-        body.innerHTML = `<div class="ap-error">⚠ ${esc(String(e))}</div>`;
-      }
-      break;
-    }
-    case "svg": {
-      const clean = DOMPurify.sanitize(data.content, { USE_PROFILES: { svg: true } });
-      body.innerHTML = `<div class="ap-svg-wrap">${clean}</div>`;
-      break;
-    }
-    case "html": {
-      body.innerHTML = `
-        <div class="ap-tabs">
-          <button class="ap-tab active" data-tab="preview">▶ Preview</button>
-          <button class="ap-tab" data-tab="source">Source</button>
-        </div>
-        <div id="ap-tab-preview" class="ap-tab-pane">
-          <iframe sandbox="allow-scripts allow-same-origin" class="ap-iframe"></iframe>
-        </div>
-        <div id="ap-tab-source" class="ap-tab-pane" style="display:none">
-          <pre class="ap-code"><code>${esc(data.content)}</code></pre>
-        </div>`;
-      const iframe = body.querySelector<HTMLIFrameElement>("iframe");
-      if (iframe) iframe.srcdoc = data.content;
-      apWireTabs(body);
-      break;
-    }
-  }
-}
-
-async function openFilePanel(filePath: string): Promise<void> {
-  const panel   = document.getElementById("artifact-panel");
-  const body    = document.getElementById("ap-body");
-  const titleEl = document.getElementById("ap-title");
-  const iconEl  = document.getElementById("ap-icon");
-  const copyBtn = document.getElementById("btn-ap-copy") as HTMLButtonElement | null;
-  if (!panel || !body) return;
-
-  const fileName = filePath.split(/[/\\]/).at(-1) ?? filePath;
-  const ext      = fileExt(filePath);
-  const icon     = FILE_ICONS[ext] ?? "📄";
-
-  openArtifactPanelShell(panel, body, titleEl, iconEl, icon, fileName);
-  if (copyBtn) { copyBtn.dataset["filePath"] = filePath; delete copyBtn.dataset["copy"]; }
-
-  // Image
-  if (IMAGE_EXTS.has(ext)) {
-    const src = "file://" + filePath.replace(/\\/g, "/");
-    body.innerHTML = `<div class="ap-img-wrap">
-      <img src="${esc(src)}" alt="${esc(fileName)}" class="ap-img"
-           onerror="this.parentElement.innerHTML='<div class=\\'ap-error\\'>⚠ Cannot load image</div>'" />
-    </div>`;
-    return;
-  }
-
-  // Unsupported binary
-  if (!TEXT_EXTS.has(ext)) {
-    body.innerHTML = `<div class="ap-unsupported">
-      <span class="ap-unsupported-icon">${icon}</span>
-      <div>No preview for <strong>.${esc(ext || "?")}</strong></div>
-      <button class="btn-sm-accent ap-sys-open" data-file-path="${esc(filePath)}">📂 Open in system</button>
-    </div>`;
-    body.querySelector<HTMLButtonElement>(".ap-sys-open")?.addEventListener("click", () =>
-      void openInSystem(filePath));
-    return;
-  }
-
-  const r = await window.clawAPI.execShell(`cat "${filePath}"`, undefined, undefined);
-  if (!r.ok) {
-    body.innerHTML = `<div class="ap-error">⚠ ${esc(r.error ?? "Cannot read file")}</div>`;
-    return;
-  }
-  const content = String((r.data as string | undefined) ?? "");
-
-  // HTML file
-  if (ext === "html" || ext === "htm") {
-    body.innerHTML = `
-      <div class="ap-tabs">
-        <button class="ap-tab active" data-tab="preview">▶ Preview</button>
-        <button class="ap-tab" data-tab="source">Source</button>
-      </div>
-      <div id="ap-tab-preview" class="ap-tab-pane">
-        <iframe sandbox="allow-scripts allow-same-origin" class="ap-iframe" srcdoc="${esc(content)}"></iframe>
-      </div>
-      <div id="ap-tab-source" class="ap-tab-pane" style="display:none">
-        <pre class="ap-code"><code>${esc(content.slice(0, 100_000))}</code></pre>
-      </div>`;
-    apWireTabs(body);
-    return;
-  }
-
-  // SVG file
-  if (ext === "svg") {
-    const clean = DOMPurify.sanitize(content, { USE_PROFILES: { svg: true } });
-    body.innerHTML = `<div class="ap-svg-wrap">${clean}</div>`;
-    return;
-  }
-
-  // Markdown
-  if (ext === "md") {
-    body.innerHTML = `<div class="ap-markdown markdown-body">${renderMd(content)}</div>`;
-    return;
-  }
-
-  // Plain text / code
-  const display = content.length > 100_000 ? content.slice(0, 100_000) + "\n… [truncated]" : content;
-  body.innerHTML = `<pre class="ap-code"><code>${esc(display)}</code></pre>`;
+function openArtifactPanel(): void {
+  const panel = document.getElementById("artifact-panel");
+  if (panel) panel.style.display = "flex";
+  renderArtifactTabs();
 }
 
 function closeArtifactPanel(): void {
@@ -1089,23 +1006,254 @@ function closeArtifactPanel(): void {
   if (panel) panel.style.display = "none";
 }
 
-function apWireTabs(body: HTMLElement): void {
-  body.querySelectorAll<HTMLElement>(".ap-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      body.querySelectorAll(".ap-tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-      const isPreview = tab.dataset["tab"] === "preview";
-      body.querySelector<HTMLElement>("#ap-tab-preview")!.style.display = isPreview ? "" : "none";
-      body.querySelector<HTMLElement>("#ap-tab-source")!.style.display  = isPreview ? "none" : "";
+function toggleArtifactPanel(): void {
+  const panel = document.getElementById("artifact-panel");
+  if (panel?.style.display === "none") {
+    openArtifactPanel();
+  } else {
+    closeArtifactPanel();
+  }
+}
+
+function renderArtifactTabs(): void {
+  const tabsContainer = document.getElementById("artifact-tabs");
+  const contentContainer = document.getElementById("artifact-tab-content");
+  if (!tabsContainer || !contentContainer) return;
+
+  if (artifactTabs.length === 0) {
+    tabsContainer.innerHTML = "";
+    contentContainer.innerHTML = `
+      <div class="ap-empty">
+        <div class="ap-empty-icon">📄</div>
+        <div>No artifacts open</div>
+        <div style="font-size:11px;color:var(--text-dim)">Click on an artifact card in chat to preview</div>
+      </div>`;
+    return;
+  }
+
+  tabsContainer.innerHTML = artifactTabs.map(tab => `
+    <button class="artifact-tab${tab.id === activeTabId ? " active" : ""}" data-tab-id="${esc(tab.id)}">
+      <span class="artifact-tab-icon">${tab.icon}</span>
+      <span class="artifact-tab-title">${esc(tab.title)}</span>
+      ${tab.isModified ? '<span class="artifact-tab-modified"></span>' : ""}
+      <button class="artifact-tab-close" data-close-tab="${esc(tab.id)}">✕</button>
+    </button>
+  `).join("");
+
+  tabsContainer.querySelectorAll<HTMLElement>(".artifact-tab").forEach(tab => {
+    tab.addEventListener("click", (e) => {
+      const closeBtn = (e.target as HTMLElement).closest(".artifact-tab-close");
+      if (closeBtn) {
+        e.stopPropagation();
+        const tabId = closeBtn.getAttribute("data-close-tab");
+        if (tabId) closeTab(tabId);
+        return;
+      }
+      const tabId = tab.dataset["tabId"];
+      if (tabId) switchToTab(tabId);
     });
+  });
+
+  const activeTab = artifactTabs.find(t => t.id === activeTabId);
+  if (activeTab) {
+    renderTabContent(activeTab, contentContainer);
+  }
+}
+
+function renderTabContent(tab: ArtifactTab, container: HTMLElement): void {
+  container.innerHTML = `<div class="ap-loading">⟳ Loading…</div>`;
+
+  const isEditable = tab.filePath !== undefined && TEXT_EXTS.has(tab.filePath.split(".").pop()?.toLowerCase() ?? "");
+  const toolbarHtml = `
+    <div class="ap-tab-toolbar">
+      <button class="ap-tab-btn active" data-view="preview">▶ Preview</button>
+      <button class="ap-tab-btn" data-view="source">📝 Source</button>
+      ${isEditable ? '<button class="ap-tab-btn" data-view="edit">✏️ Edit</button>' : ''}
+    </div>
+    <div id="ap-view-preview" class="ap-tab-pane active"></div>
+    <div id="ap-view-source" class="ap-tab-pane">
+      <pre class="ap-code"><code>${esc(tab.content)}</code></pre>
+    </div>
+    ${isEditable ? `<div id="ap-view-edit" class="ap-tab-pane">
+      <div class="ap-editor">
+        <div class="ap-editor-wrap" id="ap-editor-wrap"></div>
+        <div class="ap-editor-actions">
+          <button class="ap-editor-save" id="ap-editor-save">💾 Save</button>
+          <button class="ap-editor-discard" id="ap-editor-discard">Discard</button>
+        </div>
+      </div>
+    </div>` : ''}`;
+
+  container.innerHTML = toolbarHtml;
+
+  container.querySelectorAll<HTMLElement>(".ap-tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".ap-tab-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const view = btn.dataset["view"];
+      container.querySelectorAll(".ap-tab-pane").forEach(p => p.classList.remove("active"));
+      container.querySelector<HTMLElement>(`#ap-view-${view}`)?.classList.add("active");
+
+      if (view === "edit") {
+        initCodeMirror(tab);
+      }
+    });
+  });
+
+  const previewPane = container.querySelector<HTMLElement>("#ap-view-preview");
+  if (previewPane) {
+    switch (tab.kind) {
+      case "mermaid": {
+        const svgId = `apmmd-${Date.now()}`;
+        previewPane.innerHTML = `<div class="ap-mermaid-wrap" id="${svgId}"><span class="ap-loading">⟳ Rendering…</span></div>`;
+        mermaid.render(`svg-${svgId}`, tab.content)
+          .then(({ svg }) => {
+            const el = document.getElementById(svgId);
+            if (el) el.innerHTML = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
+          })
+          .catch(e => { previewPane!.innerHTML = `<div class="ap-error">⚠ ${esc(String(e))}</div>`; });
+        break;
+      }
+      case "svg": {
+        previewPane.innerHTML = `<div class="ap-svg-wrap">${DOMPurify.sanitize(tab.content, { USE_PROFILES: { svg: true } })}</div>`;
+        break;
+      }
+      case "html": {
+        previewPane.innerHTML = `<iframe sandbox="allow-scripts allow-same-origin" class="ap-iframe" srcdoc="${esc(tab.content)}"></iframe>`;
+        break;
+      }
+      case "file": {
+        const ext = tab.filePath?.split(".").pop()?.toLowerCase() ?? "";
+        if (IMAGE_EXTS.has(ext)) {
+          const src = tab.filePath ? "file://" + tab.filePath.replace(/\\/g, "/") : "";
+          previewPane.innerHTML = `<div class="ap-img-wrap"><img src="${esc(src)}" alt="${esc(tab.title)}" class="ap-img" /></div>`;
+        } else if (ext === "md") {
+          previewPane.innerHTML = `<div class="ap-markdown markdown-body">${renderMd(tab.content)}</div>`;
+        } else {
+          previewPane.innerHTML = `<pre class="ap-code"><code>${esc(tab.content.slice(0, 100_000))}</code></pre>`;
+        }
+        break;
+      }
+    }
+  }
+
+  if (isEditable) {
+    container.querySelector<HTMLButtonElement>("#ap-editor-save")?.addEventListener("click", () => saveEditedFile(tab));
+    container.querySelector<HTMLButtonElement>("#ap-editor-discard")?.addEventListener("click", () => {
+      tab.content = tab.originalContent;
+      tab.isModified = false;
+      renderArtifactTabs();
+    });
+  }
+}
+
+async function initCodeMirror(tab: ArtifactTab): Promise<void> {
+  const editorWrap = document.getElementById("ap-editor-wrap");
+  if (!editorWrap) return;
+  editorWrap.innerHTML = `<textarea id="ap-editor-textarea" style="width:100%;height:100%;background:var(--bg-surface);color:var(--text);border:none;padding:16px;font-family:var(--mono);font-size:12px;line-height:1.6;resize:none;">${esc(tab.content)}</textarea>`;
+  const textarea = editorWrap.querySelector<HTMLTextAreaElement>("#ap-editor-textarea");
+  textarea?.addEventListener("input", () => {
+    if (textarea) {
+      tab.content = textarea.value;
+      tab.isModified = tab.content !== tab.originalContent;
+      renderArtifactTabs();
+    }
   });
 }
 
-async function openInSystem(filePath: string): Promise<void> {
-  const isWin = /^[A-Za-z]:\\/.test(filePath);
-  const cmd   = isWin ? `explorer "${filePath}"`
-    : (navigator.userAgent.includes("Mac") ? `open "${filePath}"` : `xdg-open "${filePath}"`);
-  await window.clawAPI.execShell(cmd, undefined, undefined);
+async function saveEditedFile(tab: ArtifactTab): Promise<void> {
+  if (!tab.filePath) return;
+  const saveBtn = document.getElementById("ap-editor-save");
+  if (saveBtn) {
+    saveBtn.textContent = "Saving...";
+    (saveBtn as HTMLButtonElement).disabled = true;
+  }
+  const r = await window.clawAPI.execShell(`cat > "${tab.filePath}" << 'EOF'\n${tab.content}\nEOF`, undefined, undefined);
+  if (saveBtn) {
+    (saveBtn as HTMLButtonElement).disabled = false;
+    saveBtn.textContent = "💾 Save";
+  }
+  if (r.ok) {
+    tab.originalContent = tab.content;
+    tab.isModified = false;
+    renderArtifactTabs();
+  } else {
+    alert(`Failed to save: ${r.error}`);
+  }
+}
+
+function addArtifactTab(data: ArtifactData, filePath?: string): void {
+  const existingTab = artifactTabs.find(t =>
+    (data.kind === "file" && t.filePath === filePath) ||
+    (data.kind !== "file" && t.content === data.content)
+  );
+  if (existingTab) {
+    activeTabId = existingTab.id;
+    openArtifactPanel();
+    renderArtifactTabs();
+    return;
+  }
+  if (artifactTabs.length >= MAX_TABS) {
+    const oldestNonModified = artifactTabs.find(t => !t.isModified);
+    if (oldestNonModified) closeTab(oldestNonModified.id);
+    else closeTab(artifactTabs[0].id);
+  }
+  const id = `tab-${Date.now()}`;
+  artifactTabs.push({
+    id, kind: data.kind, title: data.title, icon: data.icon, content: data.content,
+    lang: data.lang, filePath, isModified: false, originalContent: data.content,
+  });
+  activeTabId = id;
+  openArtifactPanel();
+  renderArtifactTabs();
+}
+
+function closeTab(tabId: string): void {
+  const idx = artifactTabs.findIndex(t => t.id === tabId);
+  if (idx === -1) return;
+  artifactTabs.splice(idx, 1);
+  if (activeTabId === tabId) {
+    activeTabId = artifactTabs.length > 0 ? artifactTabs[artifactTabs.length - 1].id : null;
+  }
+  if (artifactTabs.length === 0) closeArtifactPanel();
+  else renderArtifactTabs();
+}
+
+function switchToTab(tabId: string): void {
+  if (!artifactTabs.find(t => t.id === tabId)) return;
+  activeTabId = tabId;
+  renderArtifactTabs();
+}
+
+async function openArtifactPanelLegacy(artifactId: string): Promise<void> {
+  const data = artifactStore.get(artifactId);
+  if (!data) return;
+  addArtifactTab(data);
+}
+
+async function openFilePanelLegacy(filePath: string): Promise<void> {
+  const fileName = filePath.split(/[/\\]/).at(-1) ?? filePath;
+  const ext = fileExt(filePath);
+  const icon = FILE_ICONS[ext] ?? "📄";
+  const r = await window.clawAPI.execShell(`cat "${filePath}"`, undefined, undefined);
+  if (!r.ok) { alert(`Cannot read file: ${r.error}`); return; }
+  const content = String((r.data as string | undefined) ?? "");
+  const kind: ArtifactKind = IMAGE_EXTS.has(ext) ? "file" : (ext === "svg" ? "svg" : "file");
+  addArtifactTab({ kind, title: fileName, icon, content, filePath }, filePath);
+}
+
+// Legacy functions - delegate to new system
+async function openFileViewer(filePath: string): Promise<void> {
+  void openFilePanelLegacy(filePath);
+}
+
+async function openFileInSystem(filePath: string): Promise<void> {
+  void openInSystem(filePath);
+}
+
+function closeFileViewer(): void {
+  // Legacy - now handled by artifact panel
+  closeArtifactPanel();
 }
 
 // ══ Agent panel ═══════════════════════════════════════════════
@@ -1245,6 +1393,23 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("chat-messages")?.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
 
+    // NEW: Open artifact card in multi-tab panel
+    const artifactCard = target.closest<HTMLElement>(".artifact-card");
+    if (artifactCard) {
+      const artifactId = artifactCard.dataset["artifactId"];
+      const filePath = artifactCard.dataset["filePath"];
+      
+      if (artifactId) {
+        // It's an artifact (mermaid/html/svg)
+        const data = artifactStore.get(artifactId);
+        if (data) addArtifactTab(data);
+      } else if (filePath) {
+        // It's a file card
+        void openFilePanelLegacy(filePath);
+      }
+      return;
+    }
+
     // Copy artifact source code
     const copyBtn = target.closest<HTMLButtonElement>(".btn-copy-artifact");
     if (copyBtn) {
@@ -1268,7 +1433,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Open file in viewer pane
+    // Open file in viewer pane (legacy)
     const viewBtn = target.closest<HTMLButtonElement>(".btn-file-view");
     if (viewBtn) {
       const path = viewBtn.dataset["path"] ?? "";
@@ -1337,4 +1502,241 @@ document.addEventListener("DOMContentLoaded", () => {
   }).catch(() => undefined);
 
   switchPanel("dashboard");
+
+  // ══ NEW FEATURES INITIALIZATION ════════════════════════════════════════════
+
+  // ── Resizable Panes ────────────────────────────────────────
+  function initResizeHandles(): void {
+    const handles = document.querySelectorAll<HTMLElement>(".resize-handle-v");
+    handles.forEach(handle => {
+      handle.addEventListener("mousedown", (e: Event) => {
+        e.preventDefault();
+        isResizing = true;
+        handle.classList.add("dragging");
+        resizeTarget = handle.dataset["resize"] as "sessionList" | "artifact";
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      });
+    });
+
+    document.addEventListener("mousemove", (e: MouseEvent) => {
+      if (!isResizing || !resizeTarget) return;
+      
+      const panelSessions = document.getElementById("panel-sessions");
+      if (!panelSessions) return;
+
+      const rect = panelSessions.getBoundingClientRect();
+      const relativeX = e.clientX - rect.left;
+
+      if (resizeTarget === "sessionList") {
+        const newWidth = Math.max(160, Math.min(350, relativeX));
+        paneSizes.sessionList = newWidth;
+        const sessionPane = document.getElementById("session-list-pane");
+        if (sessionPane) sessionPane.style.width = `${newWidth}px`;
+      } else if (resizeTarget === "artifact") {
+        const chatPane = document.getElementById("chat-pane");
+        const artifactPanel = document.getElementById("artifact-panel");
+        if (chatPane && artifactPanel) {
+          const chatRect = chatPane.getBoundingClientRect();
+          const artifactWidth = chatRect.right - e.clientX;
+          const newArtifactWidth = Math.max(300, Math.min(800, artifactWidth));
+          paneSizes.artifact = newArtifactWidth;
+          artifactPanel.style.width = `${newArtifactWidth}px`;
+        }
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      if (isResizing) {
+        isResizing = false;
+        resizeTarget = null;
+        document.querySelectorAll(".resize-handle-v").forEach(h => h.classList.remove("dragging"));
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    });
+  }
+  initResizeHandles();
+
+  // ── Artifact Panel Toggle ───────────────────────────────────
+  $<HTMLButtonElement>("#btn-artifact-toggle")?.addEventListener("click", toggleArtifactPanel);
+  $<HTMLButtonElement>("#artifact-panel-close")?.addEventListener("click", closeArtifactPanel);
+
+  // ── Chat Search ───────────────────────────────────────────
+  function initChatSearch(): void {
+    const searchBtn = document.getElementById("btn-chat-search");
+    const searchPopup = document.getElementById("chat-search-popup");
+    const searchInput = document.getElementById("chat-search-input") as HTMLInputElement | null;
+    const searchClose = document.getElementById("chat-search-close");
+    const searchPrev = document.getElementById("chat-search-prev");
+    const searchNext = document.getElementById("chat-search-next");
+    const jumpBtn = document.getElementById("jump-to-latest");
+
+    searchBtn?.addEventListener("click", () => {
+      if (searchPopup?.style.display === "none") {
+        searchPopup.style.display = "block";
+        searchInput?.focus();
+      } else {
+        closeChatSearch();
+      }
+    });
+
+    searchClose?.addEventListener("click", closeChatSearch);
+
+    searchInput?.addEventListener("input", () => {
+      if (searchInput) performChatSearch(searchInput.value);
+    });
+
+    searchPrev?.addEventListener("click", () => navigateSearch(-1));
+    searchNext?.addEventListener("click", () => navigateSearch(1));
+
+    jumpBtn?.addEventListener("click", () => {
+      const container = document.getElementById("chat-messages");
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+        chatAutoScrollPaused = false;
+        if (jumpBtn) jumpBtn.style.display = "none";
+      }
+    });
+
+    // Keyboard shortcut
+    document.addEventListener("keydown", (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        searchPopup?.style.display === "block" ? closeChatSearch() : searchPopup?.style.setProperty("display", "block");
+        searchInput?.focus();
+      }
+    });
+  }
+
+  function closeChatSearch(): void {
+    const searchPopup = document.getElementById("chat-search-popup");
+    if (searchPopup) searchPopup.style.display = "none";
+    clearSearchHighlights();
+    chatSearchQuery = "";
+    chatSearchMatches = [];
+    chatSearchCurrentIndex = -1;
+  }
+
+  function performChatSearch(query: string): void {
+    clearSearchHighlights();
+    chatSearchQuery = query;
+    chatSearchMatches = [];
+    chatSearchCurrentIndex = -1;
+
+    if (!query.trim()) {
+      updateSearchCount();
+      return;
+    }
+
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+
+    const messages = container.querySelectorAll<HTMLElement>(".msg");
+    const regex = new RegExp(`(${escRegex(query)})`, "gi");
+
+    messages.forEach((msg, idx) => {
+      const content = msg.querySelector(".msg-content");
+      if (content && regex.test(content.textContent ?? "")) {
+        // Highlight matches
+        if (content.innerHTML) {
+          content.innerHTML = content.innerHTML.replace(regex, '<span class="msg-search-highlight">$1</span>');
+        }
+        chatSearchMatches.push(msg);
+      }
+    });
+
+    if (chatSearchMatches.length > 0) {
+      chatSearchCurrentIndex = 0;
+      navigateSearch(0);
+    }
+
+    updateSearchCount();
+  }
+
+  function escRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function navigateSearch(delta: number): void {
+    if (chatSearchMatches.length === 0) return;
+
+    // Remove current highlight
+    const current = chatSearchMatches[chatSearchCurrentIndex];
+    if (current) {
+      current.classList.remove("msg-search-current");
+    }
+
+    chatSearchCurrentIndex = (chatSearchCurrentIndex + delta + chatSearchMatches.length) % chatSearchMatches.length;
+    
+    const newCurrent = chatSearchMatches[chatSearchCurrentIndex];
+    if (newCurrent) {
+      newCurrent.classList.add("msg-search-current");
+      newCurrent.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    updateSearchCount();
+  }
+
+  function updateSearchCount(): void {
+    const countEl = document.getElementById("chat-search-count");
+    if (countEl) {
+      if (chatSearchMatches.length === 0 && chatSearchQuery) {
+        countEl.textContent = "No results";
+      } else if (chatSearchMatches.length > 0) {
+        countEl.textContent = `${chatSearchCurrentIndex + 1}/${chatSearchMatches.length}`;
+      } else {
+        countEl.textContent = "";
+      }
+    }
+  }
+
+  function clearSearchHighlights(): void {
+    document.querySelectorAll(".msg-search-highlight, .msg-search-current").forEach(el => {
+      el.classList.remove("msg-search-highlight", "msg-search-current");
+    });
+  }
+
+  // Smart auto-scroll
+  function initAutoScroll(): void {
+    const container = document.getElementById("chat-messages");
+    const jumpBtn = document.getElementById("jump-to-latest");
+
+    container?.addEventListener("scroll", () => {
+      if (!container) return;
+      const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+      
+      if (!isAtBottom && !chatAutoScrollPaused && isRunning) {
+        chatAutoScrollPaused = true;
+        if (jumpBtn) jumpBtn.style.display = "block";
+      }
+    });
+  }
+  initAutoScroll();
+  initChatSearch();
+
+  // ── Message Actions (copy, etc) ────────────────────────────
+  function initMessageActions(): void {
+    document.getElementById("chat-messages")?.addEventListener("click", (e: Event) => {
+      const target = e.target as HTMLElement;
+      
+      // Copy button
+      const copyBtn = target.closest<HTMLButtonElement>(".btn-copy");
+      if (copyBtn) {
+        const msg = copyBtn.closest(".msg");
+        const content = msg?.querySelector(".msg-content")?.textContent ?? "";
+        navigator.clipboard.writeText(content).then(() => {
+          const orig = copyBtn.textContent;
+          copyBtn.textContent = "✓";
+          setTimeout(() => { copyBtn.textContent = orig; }, 1200);
+        });
+      }
+    });
+  }
+  initMessageActions();
+
+  // Override old artifact/card functions to use new system
+  (window as unknown as Record<string, unknown>)["openArtifactPanel"] = openArtifactPanelLegacy;
+  (window as unknown as Record<string, unknown>)["openFilePanel"] = openFilePanelLegacy;
+  (window as unknown as Record<string, unknown>)["closeArtifactPanel"] = closeArtifactPanel;
 });
