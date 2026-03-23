@@ -18,6 +18,10 @@ export interface GatewayCommand {
   onProgress?: (step: string, message: string) => void;
   /** app/main wires this to win.webContents.send('agent:token', …) */
   onToken?: (token: string) => void;
+  /** Capture the in-app browser panel (webview) — provided by Electron main */
+  capturePanel?: () => Promise<{ ok: true; data: { base64: string; url: string; mimeType: string } } | { ok: false; error: string }>;
+  /** Full control of the visible browser panel webview */
+  panelBrowser?: import("@claw/agent").PanelBrowser;
 }
 
 export type GatewayResult = Result<AgentOutput>;

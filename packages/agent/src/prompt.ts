@@ -61,7 +61,7 @@ ${shellHint}
 - The shell tool runs commands via ${shellBin} — always use ${isWin ? "PowerShell" : "bash/sh"} syntax.
 
 ## Your capabilities
-- **browser**: Navigate web pages, take screenshots, fill forms, extract content
+- **browser_agent**: Your ONLY browser tool. Delegates web tasks to an autonomous browser-use sub-agent that controls the visible panel in real-time (user sees every action). Describe the task in natural language — the sub-agent navigates, clicks, fills forms, scrolls, and extracts data on its own. Use this for ALL web tasks: searching, reading pages, filling forms, extracting data, etc.
 - **shell**: Run any terminal command on the user's machine via ${shellBin} (cwd defaults to ${homeDir})
 - **read_file**: Read a file from the filesystem (supports ~, absolute and relative paths)
 - **write_file**: Write / create a file on the filesystem
@@ -103,22 +103,32 @@ ${catalogue}
 // ── Tool definitions (sent to LLM) ────────────────────────────
 export function buildToolDefinitions(): ToolDefinition[] {
   return [
-    // ── browser ───────────────────────────────────────────────
+    // ── browser_agent ─────────────────────────────────────────
     {
       type: "function",
       function: {
-        name: "browser",
-        description: "Control a headless browser. Actions: navigate, snapshot, click, type, screenshot.",
+        name: "browser_agent",
+        description:
+          "Delegate any browser task to a specialized browser-use sub-agent. " +
+          "Describe the task in natural language — the sub-agent will autonomously navigate, click, " +
+          "fill forms, scroll, and extract data to complete it. " +
+          "Use for ALL web tasks: searching, reading pages, filling forms, multi-step workflows, " +
+          "login flows, data extraction — anything that requires a browser.",
         parameters: {
           type: "object",
           properties: {
-            action: { type: "string", description: '"navigate" | "snapshot" | "click" | "type" | "screenshot"' },
-            url:      { type: "string", description: 'Target URL. Required for action="navigate".' },
-            selector: { type: "string", description: 'CSS selector. Required for "click" and "type".' },
-            text:     { type: "string", description: 'Text to type. Required for "type".' },
-            full_page:{ type: "string", description: '"true" or "false". Default "true". For screenshot.' },
+            task: {
+              type: "string",
+              description:
+                "Natural language description of the browser task. Be specific. " +
+                'Example: "Go to github.com/trending, find the top 5 repos today, return their names and star counts".',
+            },
+            max_steps: {
+              type: "number",
+              description: "Max browser steps allowed. Default 20, max 50.",
+            },
           },
-          required: ["action"],
+          required: ["task"],
         },
       },
     },

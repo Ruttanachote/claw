@@ -1325,6 +1325,27 @@ html, body {
   font-size: 12px;
   font-family: var(--mono);
 }
+.chat-link {
+  color: #60a5fa;
+  text-decoration: underline;
+  cursor: pointer;
+  word-break: break-all;
+}
+.chat-link:hover {
+  color: #93c5fd;
+}
+.path-link {
+  color: #34d399;
+  text-decoration: underline dotted;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 0.9em;
+  word-break: break-all;
+}
+.path-link:hover {
+  color: #6ee7b7;
+  text-decoration: underline;
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    FILE CARDS
@@ -1641,6 +1662,92 @@ html, body {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Right pane (third column) */
+.right-pane {
+  width: var(--right-pane-w, 320px);
+  min-width: 200px;
+  max-width: 600px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.right-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.right-pane-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+/* Browser toolbar */
+.browser-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.browser-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color .15s, background .15s;
+}
+.browser-btn:hover { color: var(--text); background: var(--bg-surface2); }
+.browser-btn-close { margin-left: auto; font-size: 13px; }
+.browser-url {
+  flex: 1;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--mono);
+  padding: 4px 8px;
+  outline: none;
+  min-width: 0;
+}
+.browser-url:focus { border-color: var(--accent); }
+.browser-webview {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #fff;
+}
+.btn-right-pane-toggle {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+}
+.btn-right-pane-toggle:hover { color: var(--text); background: var(--bg-surface2); }
+.btn-right-pane-toggle.active { color: var(--accent); }
 
 /* Artifact panel width */
 .artifact-panel {

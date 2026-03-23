@@ -1,16 +1,11 @@
 import {
-  navigate, snapshot, click, typeText, screenshot,
-  launchBrowser,
-} from "@claw/browser";
-import type { BrowserConfig } from "@claw/browser";
-import {
   getSkillByName, resolveSkillCall,
 } from "@claw/skill-runner";
 import type { SkillDefinition } from "@claw/skill-runner";
 import { upsertCronJob, getMemory, setMemory, recordToolCall } from "@claw/memory";
 import type { ClawConfig } from "@claw/memory";
 import { createLogger } from "@claw/memory";
-import type { LLMToolCall, Result } from "./types.js";
+import type { LLMToolCall, Result, PanelBrowser } from "./types.js";
 import { ok, err } from "./types.js";
 import { execFile, spawn } from "child_process";
 import { promisify } from "util";
@@ -22,10 +17,18 @@ const execFileAsync = promisify(execFile);
 
 const log = createLogger("agent:tools");
 
+export interface LLMConfig {
+  apiKey: string;
+  model: string;
+  baseUrl?: string;
+  subAgentModel?: string;
+}
+
 export interface ToolContext {
   skills: SkillDefinition[];
-  browserConfig: BrowserConfig;
   sessionId: string;
+  llmConfig: LLMConfig;
+  panelBrowser?: PanelBrowser;
 }
 
 // ── Dispatch a single tool call ───────────────────────────────
@@ -38,7 +41,7 @@ export async function dispatchToolCall(
 
   let args: Record<string, unknown>;
   try {
-    args = JSON.parse(argsStr) as Record<string, unknown>;
+    args = (argsStr && argsStr.trim()) ? JSON.parse(argsStr) as Record<string, unknown> : {};
   } catch {
     return err(`Tool "${name}" received invalid JSON arguments: ${argsStr}`);
   }
@@ -49,8 +52,8 @@ export async function dispatchToolCall(
   recordToolCall(ctx.sessionId, name);
 
   switch (name) {
-    case "browser":
-      return dispatchBrowser(args, ctx.browserConfig);
+    case "browser_agent":
+      return dispatchBrowserAgent(args, ctx);
     case "run_skill":
       return dispatchRunSkill(args, ctx);
     case "schedule_cron":
@@ -72,83 +75,119 @@ export async function dispatchToolCall(
   }
 }
 
-// ── browser tool ──────────────────────────────────────────────
-async function dispatchBrowser(
+// ── browser_agent tool ────────────────────────────────────────
+/** Find the browser-use Python script. Checks ~/.claw/browser-agent/ then dev path. */
+function findBrowserAgentScript(): string {
+  const candidates = [
+    path.join(os.homedir(), ".claw", "browser-agent", "agent.py"),
+    path.join(process.cwd(), "packages", "browser-agent", "agent.py"),
+    path.join(path.dirname(process.argv[1] ?? ""), "..", "..", "packages", "browser-agent", "agent.py"),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0]!;
+}
+
+async function dispatchBrowserAgent(
   args: Record<string, unknown>,
-  config: BrowserConfig
+  ctx: ToolContext
 ): Promise<Result<string>> {
-  const action = String(args["action"] ?? "");
+  const task      = String(args["task"] ?? "").trim();
+  const maxSteps  = Number(args["max_steps"] ?? 20);
 
-  // Ensure browser is running
-  const launchResult = await launchBrowser(config);
-  if (!launchResult.ok) return launchResult;
+  if (!task) return err('browser_agent: "task" is required');
 
-  switch (action) {
-    case "navigate": {
-      const url = String(args["url"] ?? "");
-      if (!url) return err('browser: action="navigate" requires "url"');
-      const result = await navigate(url);
-      if (!result.ok) return result;
-      return ok(`Navigated to: ${result.data.url}\nTitle: ${result.data.title}`);
-    }
-
-    case "snapshot": {
-      const result = await snapshot();
-      if (!result.ok) return result;
-      const { url, title, elements, textContent } = result.data;
-      const elemSummary = elements
-        .slice(0, 30)
-        .map((el) => {
-          const href = el.href ? ` href="${el.href}"` : "";
-          return `  <${el.tag}${href}>${el.text}</${el.tag}>`;
-        })
-        .join("\n");
-      return ok(
-        `URL: ${url}\nTitle: ${title}\n\nElements:\n${elemSummary}\n\nPage text:\n${textContent.slice(0, 1500)}`
-      );
-    }
-
-    case "click": {
-      const selector = String(args["selector"] ?? "");
-      if (!selector) return err('browser: action="click" requires "selector"');
-      const result = await click(selector);
-      if (!result.ok) return result;
-      return ok(`Clicked: ${selector}`);
-    }
-
-    case "type": {
-      const selector = String(args["selector"] ?? "");
-      const text = String(args["text"] ?? "");
-      if (!selector) return err('browser: action="type" requires "selector"');
-      if (!text) return err('browser: action="type" requires "text"');
-      const result = await typeText(selector, text);
-      if (!result.ok) return result;
-      return ok(`Typed into ${selector}: "${text}"`);
-    }
-
-    case "screenshot": {
-      const fullPage = String(args["full_page"] ?? "true") !== "false";
-      const result = await screenshot({ fullPage });
-      if (!result.ok) return result;
-      const { title, url, base64 } = result.data;
-      // Return metadata + short base64 preview — full data available to caller
-      return ok(
-        JSON.stringify({
-          title,
-          url,
-          mimeType: "image/png",
-          base64Length: base64.length,
-          // Include full base64 so agent can pass it to the answer
-          base64,
-        })
-      );
-    }
-
-    default:
-      return err(
-        `browser: unknown action "${action}". Valid: navigate, snapshot, click, type, screenshot`
-      );
+  const scriptPath = findBrowserAgentScript();
+  if (!fs.existsSync(scriptPath)) {
+    return err(
+      `browser-use sub-agent not installed.\n` +
+      `Run the following to set it up:\n` +
+      `  pip install browser-use langchain-openai playwright\n` +
+      `  playwright install chromium\n` +
+      `  mkdir -p ~/.claw/browser-agent\n` +
+      `  cp packages/browser-agent/agent.py ~/.claw/browser-agent/`
+    );
   }
+
+  // Use venv python if available (avoids externally-managed-environment restrictions)
+  const home = process.env.HOME ?? "~";
+  const python = (() => {
+    if (process.platform === "win32") return "python";
+    const { execSync } = require("child_process") as typeof import("child_process");
+    const candidates = [
+      `${home}/.claw/browser-agent/venv/bin/python`,
+      "/opt/homebrew/bin/python3.12",
+      "/usr/local/bin/python3.12",
+      "python3.12",
+      "python3",
+    ];
+    for (const bin of candidates) {
+      try { execSync(`${bin} --version`, { stdio: "ignore" }); return bin; } catch {}
+    }
+    return "python3";
+  })();
+  const payload = JSON.stringify({ task, max_steps: maxSteps });
+
+  // ── Show the panel first so user sees something immediately ──
+  ctx.panelBrowser?.show();
+
+  // ── Get CDP URL so browser-use can control the visible panel ─
+  const cdpUrl = await ctx.panelBrowser?.getCdpUrl() ?? null;
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    IKAI_API_KEY:         ctx.llmConfig.apiKey,
+    IKAI_BASE_URL:        ctx.llmConfig.baseUrl ?? "",
+    IKAI_MODEL:           ctx.llmConfig.model,
+    IKAI_SUB_AGENT_MODEL: ctx.llmConfig.subAgentModel ?? ctx.llmConfig.model,
+    ...(cdpUrl ? { BROWSER_AGENT_CDP_URL: cdpUrl } : {}),
+  };
+
+  log.info("browser_agent: starting sub-agent", {
+    task: task.slice(0, 100),
+    scriptPath,
+    cdpConnected: !!cdpUrl,
+  });
+
+  try {
+    const { stdout, stderr } = await execFileAsync(python, [scriptPath, payload], {
+      env,
+      timeout: 180_000,   // 3 min — browser tasks can be slow
+    });
+
+    if (stderr?.trim()) {
+      log.warn("browser_agent stderr", { stderr: stderr.slice(0, 500) });
+    }
+
+    const output = stdout.trim();
+    if (!output) return err("browser_agent returned no output");
+
+    try {
+      const parsed = JSON.parse(output) as { result?: string; error?: string };
+      if (parsed.error) return err(`browser_agent: ${parsed.error}`);
+      return ok(stripBase64(parsed.result ?? output));
+    } catch {
+      return ok(stripBase64(output));
+    }
+  } catch (e: unknown) {
+    const ex = e as { stderr?: string; stdout?: string; message?: string; code?: string };
+    if (ex.code === "ETIMEDOUT") return err("browser_agent: timed out after 3 minutes");
+    // stdout may contain JSON error from agent.py; stderr has Python tracebacks
+    const fromStdout = (() => {
+      try {
+        const p = JSON.parse(ex.stdout?.trim() ?? "") as { error?: string };
+        return p.error ?? null;
+      } catch { return null; }
+    })();
+    const detail = fromStdout || ex.stderr?.trim() || ex.stdout?.trim() || ex.message || String(e);
+    return err(`browser_agent failed: ${detail}`);
+  }
+}
+
+// ── Strip base64 blobs from any text before sending to LLM ───
+function stripBase64(text: string): string {
+  return text.replace(
+    /"base64"\s*:\s*"[A-Za-z0-9+/=\r\n]{50,}"/g,
+    '"base64":"[stripped]"'
+  );
 }
 
 // ── run_skill tool ────────────────────────────────────────────
@@ -189,60 +228,16 @@ async function dispatchRunSkill(
 
   log.info("Running skill", { name: skillName, inputs });
 
-  // Execute skill steps via browser (skills that need browser)
+  // For browser skills: route through browser_agent
   if (skill.tools.includes("browser")) {
-    return executeBrowserSkill(callResult.data.resolvedSteps, inputs, ctx.browserConfig);
+    return dispatchBrowserAgent(
+      { task: callResult.data.resolvedSteps, max_steps: 30 },
+      ctx
+    );
   }
 
   // For non-browser skills: return resolved steps as the result
-  // (future: other tool types will be dispatched here)
   return ok(`Skill "${skillName}" resolved steps:\n${callResult.data.resolvedSteps}`);
-}
-
-async function executeBrowserSkill(
-  steps: string,
-  inputs: Record<string, unknown>,
-  browserConfig: BrowserConfig
-): Promise<Result<string>> {
-  // Parse numbered steps and execute sequentially
-  const lines = steps.split("\n").filter((l) => /^\d+\./.test(l.trim()));
-
-  const launchResult = await launchBrowser(browserConfig);
-  if (!launchResult.ok) return launchResult;
-
-  const results: string[] = [];
-
-  for (const line of lines) {
-    const step = line.replace(/^\d+\.\s*/, "").trim().toLowerCase();
-
-    if (step.startsWith("navigate to") || step.includes("navigate to")) {
-      const url = extractUrl(line) ?? String(inputs["url"] ?? "");
-      if (url) {
-        const r = await navigate(url);
-        if (r.ok) results.push(`Navigated to: ${r.data.title}`);
-        else return r;
-      }
-    } else if (step.includes("screenshot") || step.includes("capture")) {
-      const r = await screenshot({ fullPage: true });
-      if (r.ok) {
-        results.push(
-          JSON.stringify({ title: r.data.title, url: r.data.url, base64: r.data.base64 })
-        );
-      } else return r;
-    } else if (step.includes("snapshot") || step.includes("extract")) {
-      const r = await snapshot();
-      if (r.ok) results.push(`Snapshot: ${r.data.title} — ${r.data.elements.length} elements`);
-      else return r;
-    }
-    // Other steps are informational / wait steps — skip
-  }
-
-  return ok(results.join("\n") || "Skill executed (no output)");
-}
-
-function extractUrl(text: string): string | null {
-  const m = text.match(/https?:\/\/\S+/);
-  return m ? m[0] : null;
 }
 
 // ── schedule_cron tool ────────────────────────────────────────
@@ -478,11 +473,19 @@ export async function execShellCommand(
 export function buildToolContext(
   skills: SkillDefinition[],
   config: ClawConfig,
-  sessionId: string
+  sessionId: string,
+  panelBrowser?: PanelBrowser
 ): ToolContext {
-  const browserConfig: BrowserConfig = {
-    headless: config.browser.headless,
-    executablePath: config.browser.executable_path,
+  const llmConfig: LLMConfig = {
+    apiKey:        config.llm.api_key,
+    model:         config.llm.model,
+    baseUrl:       config.llm.base_url,
+    subAgentModel: config.agent.sub_agent_model,
   };
-  return { skills, browserConfig, sessionId };
+  return {
+    skills,
+    sessionId,
+    llmConfig,
+    ...(panelBrowser ? { panelBrowser } : {}),
+  };
 }

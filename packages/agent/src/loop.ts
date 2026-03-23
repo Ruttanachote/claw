@@ -76,7 +76,7 @@ export async function runAgent(input: AgentInput): Promise<AgentResult> {
   writeMessage({ sessionId, role: "user", content: input.userMessage });
 
   const toolDefs   = buildToolDefinitions();
-  const toolCtx    = buildToolContext(skills, config, sessionId);
+  const toolCtx    = buildToolContext(skills, config, sessionId, input.panelBrowser);
   const maxIter    = config.agent.max_iterations;
 
   // ── 5. Orchestrator loop ──────────────────────────────────────

@@ -7,11 +7,11 @@ export function createPopupWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1280,
     height: 720,
-    show: false,
+    show: true,
     frame: false,
     resizable: true,
-    skipTaskbar: true,
-    alwaysOnTop: true,
+    skipTaskbar: false,
+    alwaysOnTop: false,
     transparent: false,
     hasShadow: true,
     webPreferences: {
@@ -19,17 +19,8 @@ export function createPopupWindow(): BrowserWindow {
       contextIsolation: true,    // mandatory for security
       nodeIntegration: false,    // never expose Node to renderer
       sandbox: false,            // preload needs access to ipcRenderer
+      webviewTag: true,          // enable <webview> for browser pane
     },
-  });
-
-  // Hide when user clicks outside (blur)
-  win.on("blur", () => {
-    // Small delay so clicks on tray icon don't immediately re-hide
-    setTimeout(() => {
-      if (!win.isDestroyed() && !win.isFocused()) {
-        win.hide();
-      }
-    }, 150);
   });
 
   // Load renderer

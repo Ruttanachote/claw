@@ -9,6 +9,12 @@ import { registerIpcHandlers, unregisterIpcHandlers } from "./ipc.js";
 
 const log = createLogger("main");
 
+// ── CDP remote debugging — must be set before app.whenReady() ─
+// Exposes Chrome DevTools Protocol on localhost:9222 so browser-use
+// sub-agent can connect to the visible panel webview.
+app.commandLine.appendSwitch("remote-debugging-port", "9222");
+app.commandLine.appendSwitch("remote-debugging-address", "127.0.0.1");
+
 // ── Singleton refs ────────────────────────────────────────────
 let popupWindow: BrowserWindow | null = null;
 const cronManager = createCronManager();

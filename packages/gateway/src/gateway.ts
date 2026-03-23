@@ -121,11 +121,13 @@ export async function handleCommand(
   _currentAbort = new AbortController();
 
   const agentInput = {
-    sessionId:   cmd.sessionId,
-    userMessage: cmd.input,
-    abortSignal: _currentAbort.signal,
-    ...(cmd.onProgress ? { onProgress: cmd.onProgress } : {}),
-    ...(cmd.onToken    ? { onToken: cmd.onToken }       : {}),
+    sessionId:    cmd.sessionId,
+    userMessage:  cmd.input,
+    abortSignal:  _currentAbort.signal,
+    ...(cmd.onProgress    ? { onProgress: cmd.onProgress }       : {}),
+    ...(cmd.onToken       ? { onToken: cmd.onToken }             : {}),
+    ...(cmd.capturePanel  ? { capturePanel: cmd.capturePanel }   : {}),
+    ...(cmd.panelBrowser  ? { panelBrowser: cmd.panelBrowser }   : {}),
   };
 
   const result = await runAgent(agentInput);

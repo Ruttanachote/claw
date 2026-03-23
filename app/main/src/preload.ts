@@ -44,6 +44,13 @@ export interface ClawAPI {
   execShell: (command: string, cwd?: string, execId?: string) => R;
   getShellInfo: () => R;
   onShellChunk: (cb: (d: { id: string; chunk: string }) => void) => () => void;
+
+  // System
+  openExternal: (url: string) => R;
+  registerPanelWebview: (id: number) => R;
+
+  // Browser panel events (from main → renderer)
+  onPanelShow: (cb: (url: string) => void) => () => void;
 }
 
 const api: ClawAPI = {
@@ -94,6 +101,15 @@ const api: ClawAPI = {
     const h = (_e: Electron.IpcRendererEvent, d: { id: string; chunk: string }) => cb(d);
     ipcRenderer.on("shell:chunk", h);
     return () => ipcRenderer.removeListener("shell:chunk", h);
+  },
+
+  openExternal:         (url) => ipcRenderer.invoke("shell:openExternal", url),
+  registerPanelWebview: (id)  => ipcRenderer.invoke("browser:register-panel", id),
+
+  onPanelShow: (cb) => {
+    const h = (_e: Electron.IpcRendererEvent, url: string) => cb(url);
+    ipcRenderer.on("browser:panel-show", h);
+    return () => ipcRenderer.removeListener("browser:panel-show", h);
   },
 };
 

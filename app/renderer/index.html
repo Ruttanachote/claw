@@ -255,6 +255,7 @@
               <div class="chat-input-area">
                 <button class="btn-term-toggle" id="btn-toggle-term" title="Toggle terminal">💻</button>
                 <button class="btn-artifact-toggle" id="btn-artifact-toggle" title="Toggle artifact panel">📄</button>
+                <button class="btn-right-pane-toggle" id="btn-right-pane-toggle" title="Toggle right panel">⊞</button>
                 <textarea
                   class="chat-input"
                   id="chat-input"
@@ -266,6 +267,35 @@
               </div>
             </div>
           </div>
+
+          <!-- Vertical resize handle: chat <-> right pane -->
+          <div class="resize-handle-v" id="resize-handle-right" data-resize="rightPane" style="display:none">
+            <div class="resize-handle-line"></div>
+          </div>
+
+          <!-- Right pane — browser monitor -->
+          <aside class="right-pane" id="right-pane" style="display:none">
+
+            <!-- Browser toolbar -->
+            <div class="browser-toolbar">
+              <button class="browser-btn" id="browser-back"    title="Back">‹</button>
+              <button class="browser-btn" id="browser-forward" title="Forward">›</button>
+              <button class="browser-btn" id="browser-refresh" title="Refresh">↺</button>
+              <input  class="browser-url" id="browser-url" type="text" placeholder="about:blank" spellcheck="false" />
+              <button class="browser-btn" id="browser-go"      title="Go">→</button>
+              <button class="browser-btn browser-btn-close" id="btn-right-pane-close" title="Close">✕</button>
+            </div>
+
+            <!-- Webview -->
+            <webview
+              id="browser-webview"
+              class="browser-webview"
+              src="about:blank"
+              allowpopups
+            ></webview>
+
+          </aside>
+
         </section>
 
         <!-- ══════════════════════════════════════════════════════════ -->

@@ -137,17 +137,64 @@ function buildCustomRenderer(): Renderer {
     </figure>`;
   };
 
+  renderer.link = ({ href, text }: { href: string; text: string }) => {
+    if (!href) return text;
+    return `<a class="chat-link" data-href="${esc(href)}" title="${esc(href)}">${text}</a>`;
+  };
+
   return renderer;
 }
 
 marked.use({ renderer: buildCustomRenderer() });
 
+// ── Path linkifier — wraps bare file/folder paths in clickable spans ──
+const PATH_RE = /((?:\/(?!\/)|~\/)[^\s<>"'`,;!?)[\]{}]+|[A-Za-z]:\\[^\s<>"'`,;!?)[\]{}]+)/g;
+
+function linkifyPaths(html: string): string {
+  // Only process text content between HTML tags, skip <code>/<pre> blocks
+  let result = "";
+  let i = 0;
+  let inCode = false;
+  const tagRe = /<\/?(?:code|pre)[^>]*>|>([^<]*)</gi;
+  let match: RegExpExecArray | null;
+  tagRe.lastIndex = 0;
+
+  while ((match = tagRe.exec(html)) !== null) {
+    const full = match[0];
+    // Track code/pre blocks
+    if (/^<\/?(?:code|pre)/i.test(full)) {
+      result += html.slice(i, match.index + full.length);
+      i = match.index + full.length;
+      inCode = /^<(?:code|pre)/i.test(full);
+      continue;
+    }
+    // Text node between > and <
+    const text = match[1];
+    const tagStart = match.index;
+    result += html.slice(i, tagStart + 1); // include the leading >
+    if (!inCode && text && PATH_RE.test(text)) {
+      PATH_RE.lastIndex = 0;
+      result += text.replace(PATH_RE, (p: string) =>
+        `<span class="path-link" data-path="${esc(p)}">${esc(p)}</span>`
+      );
+    } else {
+      result += text ?? "";
+    }
+    result += "<";
+    i = tagStart + full.length;
+    PATH_RE.lastIndex = 0;
+  }
+  result += html.slice(i);
+  return result;
+}
+
 // ── Markdown renderer ──────────────────────────────────────────
 function renderMd(text: string): string {
-  return DOMPurify.sanitize(marked.parse(text) as string, {
+  const sanitized = DOMPurify.sanitize(marked.parse(text) as string, {
     ADD_TAGS: ["figure", "figcaption"],
     ADD_ATTR: ["loading", "onerror", "data-artifact-id", "data-copy", "data-path"],
   });
+  return linkifyPaths(sanitized);
 }
 
 // ── File utilities ─────────────────────────────────────────────
@@ -200,14 +247,16 @@ interface PaneSizes {
   sessionList: number;
   chat: number;
   artifact: number;
+  rightPane: number;
 }
 let paneSizes: PaneSizes = {
   sessionList: 220,
   chat: 0, // flex: 1
   artifact: 450,
+  rightPane: 320,
 };
 let isResizing = false;
-let resizeTarget: "sessionList" | "artifact" | null = null;
+let resizeTarget: "sessionList" | "artifact" | "rightPane" | null = null;
 
 // ══ NEW: Multi-Tab Artifact System ════════════════════════════════════════
 interface ArtifactTab {
@@ -1242,17 +1291,74 @@ async function openFilePanelLegacy(filePath: string): Promise<void> {
   addArtifactTab({ kind, title: fileName, icon, content, filePath }, filePath);
 }
 
+// ── Browser Pane (right-pane webview) ─────────────────────────
+function getWebview(): Electron.WebviewTag | null {
+  return document.getElementById("browser-webview") as Electron.WebviewTag | null;
+}
+
+function loadInRightPane(url: string): void {
+  // Open pane first
+  const pane   = document.getElementById("right-pane");
+  const handle = document.getElementById("resize-handle-right");
+  const btn    = document.getElementById("btn-right-pane-toggle");
+  if (pane && pane.style.display === "none") {
+    pane.style.display   = "flex";
+    if (handle) (handle as HTMLElement).style.display = "flex";
+    (pane as HTMLElement).style.width = `${paneSizes.rightPane}px`;
+    btn?.classList.add("active");
+  }
+  // Load URL in webview
+  const wv = getWebview();
+  if (wv) {
+    wv.src = url;
+    const urlBar = document.getElementById("browser-url") as HTMLInputElement | null;
+    if (urlBar) urlBar.value = url;
+  }
+}
+
+function loadArtifactInRightPane(data: ArtifactData): void {
+  let html = "";
+  if (data.kind === "html" || data.lang === "html" || data.lang === "htm") {
+    html = data.content;
+  } else if (data.kind === "svg") {
+    html = `<!DOCTYPE html><html><body style="margin:0;background:#fff">${data.content}</body></html>`;
+  } else if (data.kind === "mermaid") {
+    html = `<!DOCTYPE html><html><head>
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"><\/script>
+<style>body{margin:16px;background:#141008;color:#f0e8d8;}</style>
+</head><body>
+<div class="mermaid">${data.content}</div>
+<script>mermaid.initialize({startOnLoad:true,theme:'dark'});<\/script>
+</body></html>`;
+  }
+  if (html) {
+    const blob = new Blob([html], { type: "text/html" });
+    const url  = URL.createObjectURL(blob);
+    loadInRightPane(url);
+  }
+}
+
 // Legacy functions - delegate to new system
 async function openFileViewer(filePath: string): Promise<void> {
-  void openFilePanelLegacy(filePath);
+  // Render in browser pane instead of artifact tabs
+  const ext = fileExt(filePath);
+  const renderExts = new Set(["html","htm","svg","png","jpg","jpeg","gif","webp","pdf"]);
+  if (renderExts.has(ext)) {
+    loadInRightPane("file://" + filePath);
+  } else {
+    void openFilePanelLegacy(filePath);
+  }
+}
+
+function openInSystem(filePath: string): void {
+  void window.clawAPI.openExternal(filePath);
 }
 
 async function openFileInSystem(filePath: string): Promise<void> {
-  void openInSystem(filePath);
+  openInSystem(filePath);
 }
 
 function closeFileViewer(): void {
-  // Legacy - now handled by artifact panel
   closeArtifactPanel();
 }
 
@@ -1393,19 +1499,24 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("chat-messages")?.addEventListener("click", (e) => {
     const target = e.target as HTMLElement;
 
-    // NEW: Open artifact card in multi-tab panel
+    // Open artifact / file card → render in browser pane
     const artifactCard = target.closest<HTMLElement>(".artifact-card");
     if (artifactCard) {
       const artifactId = artifactCard.dataset["artifactId"];
-      const filePath = artifactCard.dataset["filePath"];
-      
+      const filePath   = artifactCard.dataset["filePath"];
+
       if (artifactId) {
-        // It's an artifact (mermaid/html/svg)
         const data = artifactStore.get(artifactId);
-        if (data) addArtifactTab(data);
+        if (data) {
+          // html / svg / mermaid → browser pane
+          if (data.kind === "html" || data.kind === "svg" || data.kind === "mermaid") {
+            loadArtifactInRightPane(data);
+          } else {
+            addArtifactTab(data);
+          }
+        }
       } else if (filePath) {
-        // It's a file card
-        void openFilePanelLegacy(filePath);
+        void openFileViewer(filePath);
       }
       return;
     }
@@ -1446,6 +1557,40 @@ document.addEventListener("DOMContentLoaded", () => {
     if (openBtn) {
       const path = openBtn.dataset["path"] ?? "";
       if (path) void openFileInSystem(path);
+      return;
+    }
+
+    // Open file/folder paths — renderable files go to browser pane, others to Finder
+    const pathLink = target.closest<HTMLSpanElement>(".path-link");
+    if (pathLink) {
+      e.preventDefault();
+      const p = pathLink.dataset["path"] ?? "";
+      if (p) {
+        const ext = fileExt(p);
+        const browserExts = new Set(["html","htm","svg","png","jpg","jpeg","gif","webp","pdf"]);
+        if (browserExts.has(ext)) {
+          loadInRightPane("file://" + p);
+        } else {
+          void window.clawAPI.openExternal(p);
+        }
+      }
+      return;
+    }
+
+    // chat-link → renderable files go to browser pane too
+    const chatLink = target.closest<HTMLAnchorElement>(".chat-link");
+    if (chatLink) {
+      e.preventDefault();
+      const href = chatLink.dataset["href"] ?? "";
+      if (href) {
+        const ext = fileExt(href.split("?")[0] ?? "");
+        const browserExts = new Set(["html","htm","svg","png","jpg","jpeg","gif","webp","pdf"]);
+        if (browserExts.has(ext) || /^file:\/\//.test(href)) {
+          loadInRightPane(href);
+        } else {
+          void window.clawAPI.openExternal(href);
+        }
+      }
       return;
     }
   });
@@ -1543,6 +1688,15 @@ document.addEventListener("DOMContentLoaded", () => {
           paneSizes.artifact = newArtifactWidth;
           artifactPanel.style.width = `${newArtifactWidth}px`;
         }
+      } else if (resizeTarget === "rightPane") {
+        const panelSessions = document.getElementById("panel-sessions");
+        const rightPane = document.getElementById("right-pane");
+        if (panelSessions && rightPane) {
+          const panelRect = panelSessions.getBoundingClientRect();
+          const newWidth = Math.max(200, Math.min(600, panelRect.right - e.clientX));
+          paneSizes.rightPane = newWidth;
+          rightPane.style.width = `${newWidth}px`;
+        }
       }
     });
 
@@ -1561,6 +1715,89 @@ document.addEventListener("DOMContentLoaded", () => {
   // ── Artifact Panel Toggle ───────────────────────────────────
   $<HTMLButtonElement>("#btn-artifact-toggle")?.addEventListener("click", toggleArtifactPanel);
   $<HTMLButtonElement>("#artifact-panel-close")?.addEventListener("click", closeArtifactPanel);
+
+  // ── Right Pane Toggle ──────────────────────────────────────
+  function openRightPane(): void {
+    const pane   = document.getElementById("right-pane");
+    const handle = document.getElementById("resize-handle-right");
+    const btn    = $<HTMLButtonElement>("#btn-right-pane-toggle");
+    if (!pane) return;
+    pane.style.display   = "flex";
+    if (handle) handle.style.display = "flex";
+    pane.style.width = `${paneSizes.rightPane}px`;
+    btn?.classList.add("active");
+  }
+  function closeRightPane(): void {
+    const pane   = document.getElementById("right-pane");
+    const handle = document.getElementById("resize-handle-right");
+    const btn    = $<HTMLButtonElement>("#btn-right-pane-toggle");
+    if (pane)   pane.style.display   = "none";
+    if (handle) handle.style.display = "none";
+    btn?.classList.remove("active");
+  }
+  function toggleRightPane(): void {
+    const pane = document.getElementById("right-pane");
+    if (!pane || pane.style.display === "none") openRightPane();
+    else closeRightPane();
+  }
+  $<HTMLButtonElement>("#btn-right-pane-toggle")?.addEventListener("click", toggleRightPane);
+  $<HTMLButtonElement>("#btn-right-pane-close")?.addEventListener("click", closeRightPane);
+
+  // ── Browser Pane Controls ─────────────────────────────────
+  function initBrowserPane(): void {
+    const wv      = getWebview();
+    const urlBar  = $<HTMLInputElement>("#browser-url");
+    const btnBack = $<HTMLButtonElement>("#browser-back");
+    const btnFwd  = $<HTMLButtonElement>("#browser-forward");
+    const btnRef  = $<HTMLButtonElement>("#browser-refresh");
+    const btnGo   = $<HTMLButtonElement>("#browser-go");
+    if (!wv) return;
+
+    // Register webview ID with main so IKAI can capture it
+    function registerWebview(): void {
+      const id = (wv as HTMLElement & { getWebContentsId?: () => number }).getWebContentsId?.();
+      if (id !== undefined) void window.clawAPI.registerPanelWebview(id);
+    }
+
+    // Update URL bar when webview navigates + re-register
+    wv.addEventListener("did-navigate", (e: Event) => {
+      const url = (e as CustomEvent & { url: string }).url ?? (wv as HTMLElement & {getURL?:()=>string}).getURL?.() ?? "";
+      if (urlBar && url && url !== "about:blank") urlBar.value = url;
+      registerWebview();
+    });
+    wv.addEventListener("did-navigate-in-page", (e: Event) => {
+      const url = (e as CustomEvent & { url: string }).url ?? "";
+      if (urlBar && url) urlBar.value = url;
+    });
+    // Register as soon as the webview is ready
+    wv.addEventListener("dom-ready", () => registerWebview());
+
+    // Back / Forward / Refresh
+    btnBack?.addEventListener("click", () => (wv as HTMLElement & {goBack?:()=>void}).goBack?.());
+    btnFwd?.addEventListener("click",  () => (wv as HTMLElement & {goForward?:()=>void}).goForward?.());
+    btnRef?.addEventListener("click",  () => (wv as HTMLElement & {reload?:()=>void}).reload?.());
+
+    // Go button + Enter key in URL bar
+    function navigateTo(): void {
+      let url = urlBar?.value.trim() ?? "";
+      if (!url) return;
+      if (!/^[a-z][a-z0-9+\-.]*:\/\//i.test(url)) url = "https://" + url;
+      wv.src = url;
+      if (urlBar) urlBar.value = url;
+    }
+    btnGo?.addEventListener("click", navigateTo);
+    urlBar?.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter") navigateTo();
+    });
+  }
+  initBrowserPane();
+
+  // ── browser:panel-show — agent navigated, open pane + sync URL bar ──
+  window.clawAPI.onPanelShow((url: string) => {
+    openRightPane();
+    const urlBar = $<HTMLInputElement>("#browser-url");
+    if (urlBar && url && url !== "about:blank") urlBar.value = url;
+  });
 
   // ── Chat Search ───────────────────────────────────────────
   function initChatSearch(): void {

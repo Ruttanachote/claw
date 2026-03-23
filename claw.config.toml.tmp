@@ -1,0 +1,34 @@
+# IKAI Configuration
+# Place this file at: ~/.claw/config.toml
+# Docs: https://github.com/your-org/ikai
+
+[llm]
+provider    = "openrouter"
+base_url    = "https://openrouter.ai/api/v1"
+api_key     = "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"
+model       = "anthropic/claude-sonnet-4-6"
+max_tokens  = 4096
+
+[agent]
+orchestrator_model  = "anthropic/claude-sonnet-4-6"
+sub_agent_model     = "anthropic/claude-haiku-4-5-20251001"
+max_iterations      = 20
+
+[browser]
+headless         = true
+executable_path  = ""   # leave empty to auto-detect
+
+[memory]
+db_path               = "./claw.db"
+max_context_messages  = 50
+
+[skills]
+paths = [
+  "./skills/built-in",
+  "./skills/user",
+  "./skills/community"
+]
+
+[logging]
+dir   = "~/.claw/logs"
+level = "info"   # "debug" | "info" | "warn" | "error"

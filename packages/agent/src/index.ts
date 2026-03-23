@@ -12,6 +12,8 @@ export type {
   LLMMessage,
   LLMToolCall,
   Message,
+  PanelBrowser,
+  PanelCapture,
 } from "./types.js";
 
 export { ok, err } from "./types.js";
